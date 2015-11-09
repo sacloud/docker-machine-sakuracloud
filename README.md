@@ -35,7 +35,7 @@ $ chmod +x /usr/local/bin/docker-machine-driver-sakuracloud
 ```
 
 The latest version of `docker-machine-driver-sakuracloud` binary is available on
-the ["Releases"](https://github.com/yamamoto-febc/releases/latest) page.
+the ["Releases"](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/latest) page.
 
 ## Usage
 Official documentation for Docker Machine [is available here](https://docs.docker.com/machine/).
