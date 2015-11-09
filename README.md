@@ -26,11 +26,10 @@ $ brew install docker-machine-sakuracloud
 --->
 
 download the binary `docker-machine-driver-sakuracloud`
-and  make it available by `$PATH`, for example by putting it to `/usr/local/bin/`:
+and  make it available by `$PATH`, for example by putting it to `/usr/local/bin/`
+
 
 ```console
-$ curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/latest/docker-machine-driver-sakuracloud > /usr/local/bin/docker-machine-driver-sakuracloud 
-
 $ chmod +x /usr/local/bin/docker-machine-driver-sakuracloud
 ```
 
