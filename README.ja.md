@@ -25,11 +25,9 @@ $ brew install docker-machine-sakuracloud
 
 `docker-machine-driver-sakuracloud`バイナリをダウンロードし、パス(`$PATH`)を通してください。
 (Windowsの場合はdocker-machine.exeと同じフォルダに配置すればよいです)
-
+配置後にchmod +xしておいてください。
 
 ```console
-$ curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/latest/docker-machine-driver-sakuracloud > /usr/local/bin/docker-machine-driver-sakuracloud 
-
 $ chmod +x /usr/local/bin/docker-machine-driver-sakuracloud
 ```
 
