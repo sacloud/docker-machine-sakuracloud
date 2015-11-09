@@ -33,7 +33,7 @@ $ curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/l
 $ chmod +x /usr/local/bin/docker-machine-driver-sakuracloud
 ```
 
-`docker-machine-driver-sakuracloud`の最新のバイナリはこちらの["Releases"](https://github.com/yamamoto-febc/releases/latest)ページからダウンロードできます。
+`docker-machine-driver-sakuracloud`の最新のバイナリはこちらの["Releases"](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/latest)ページからダウンロードできます。
 
 ## 使い方
 
