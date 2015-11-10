@@ -13,9 +13,8 @@ to create Docker hosts on [SAKURA CLOUD](http://cloud.sakura.ad.jp)
 * OSX 10.9+
 * Windows 10
 
-## Installation 
-<!---
-#### Install via Homebrew:
+## Installation
+#### Install via Homebrew(for OSX):
 
 ```console
 $ brew tap yamamoto-febc/docker-machine-sakuracloud
@@ -23,7 +22,6 @@ $ brew install docker-machine-sakuracloud
 ```
 
 #### Install via manualy:
---->
 
 download the binary `docker-machine-driver-sakuracloud`
 and  make it available by `$PATH`, for example by putting it to `/usr/local/bin/`

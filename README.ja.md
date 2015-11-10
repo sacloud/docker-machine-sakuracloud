@@ -9,11 +9,10 @@ docker-machine 0.5にて[マージ](https://github.com/docker/machine/pull/1902)
   [Docker Toolbox](https://www.docker.com/docker-toolbox) 1.9.0+)
 
 ## 動作確認済み環境
-* OSX 10.9+  : amd64 
-* Windows 10 : amd64 
+* OSX 10.9+  : amd64
+* Windows 10 : amd64
 
-## インストール 
-<!---
+## インストール
 #### Homebrewを使う場合(for OSX):
 
 ```console
@@ -21,7 +20,6 @@ $ brew tap yamamoto-febc/docker-machine-sakuracloud
 $ brew install docker-machine-sakuracloud
 ```
 #### 手動インストール:
---->
 
 `docker-machine-driver-sakuracloud`バイナリをダウンロードし、パス(`$PATH`)を通してください。
 (Windowsの場合はdocker-machine.exeと同じフォルダに配置すればよいです)
