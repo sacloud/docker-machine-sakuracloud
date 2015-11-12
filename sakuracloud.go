@@ -3,14 +3,17 @@ package sakuracloud
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 )
 
 const (
-	sakuraCloudAPIRoot          = "https://secure.sakura.ad.jp/cloud/zone"
-	sakuraCloudAPIRootSuffix    = "api/cloud/1.1"
+	sakuraCloudAPIRoot                = "https://secure.sakura.ad.jp/cloud/zone"
+	sakuraCloudAPIRootSuffix          = "api/cloud/1.1"
+	sakuraCloudPublicImageSearchWords = "Ubuntu%20Server%2014%2064bit"
+	//sakuraCloudPublicImageSearchWords = "Ubuntu"
 	sakuraUbuntuSetupScriptName = "_allow-sudo-for-docker-machine_"
 	sakuraUbuntuSetupScriptBody = `#!/bin/bash
 
@@ -454,4 +457,57 @@ func (c *virtualGuest) GetUbuntuCustomizeNoteId() (string, error) {
 	}
 
 	return s.Note.ID, nil
+}
+
+func (c *virtualGuest) GetUbuntuArchiveId() (string, error) {
+	type filter struct {
+		Name  string
+		Scope string
+	}
+	type archiveRequest struct {
+		Filter  filter
+		Include []string
+	}
+
+	type archiveData struct {
+		ID string
+	}
+	type archiveResponse struct {
+		Count    int
+		Archives []archiveData
+	}
+
+	var (
+		method = "GET"
+		uri    = "archive"
+		body   = archiveRequest{
+			Filter: filter{
+				//				ID:    "112700954421",
+				Name:  sakuraCloudPublicImageSearchWords,
+				Scope: "shared",
+			},
+			Include: []string{"ID", "Name"},
+		}
+	)
+
+	bodyJSON, err := json.Marshal(body)
+	if err != nil {
+		return "", err
+	}
+	uri = fmt.Sprintf("%s?%s", uri, bodyJSON)
+	data, err := c.newRequest(method, uri, nil)
+	if err != nil {
+		return "", err
+	}
+	var ubuntu archiveResponse
+	if err := json.Unmarshal(data, &ubuntu); err != nil {
+		return "", err
+	}
+
+	//すでに登録されている場合
+	if ubuntu.Count > 0 {
+		return ubuntu.Archives[0].ID, nil
+	} else {
+		return "", errors.New("Archive'Ubuntu Server 14 64bit' not found.")
+	}
 }

@@ -23,8 +23,6 @@ const (
 	defaultDiskSize        = 20480     // 20GB
 	defaultDiskName        = "disk001" // ディスク名
 	defaultDiskConnection  = "virtio"  // virtio
-	//TODO アーカイブの名称から設定できるようにする。 + ゾーンごとにUbuntu Server 14.04.2を探すようにする
-	defaultDiskSourceArchiveID = "112700643027" // 石狩第１ゾーンでのUbuntu Server 14.04.2
 )
 
 type Driver struct {
@@ -110,7 +108,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "SAKURACLOUD_DISK_SOURCE_ARCHIVE_ID",
 			Name:   "sakuracloud-disk-source-archive-id",
 			Usage:  "sakuracloud disk source archive id",
-			Value:  defaultDiskSourceArchiveID,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "SAKURACLOUD_PASSWORD",
@@ -187,6 +184,14 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	if d.serverConfig.HostName == "" {
 		d.serverConfig.HostName = d.GetMachineName()
+	}
+
+	if d.serverConfig.DiskSourceArchiveId == "" {
+		archiveId, err := d.getClient().VirtualGuest().GetUbuntuArchiveId()
+		if err != nil {
+			return err
+		}
+		d.serverConfig.DiskSourceArchiveId = archiveId
 	}
 
 	return validateSakuraServerConfig(d.serverConfig)
