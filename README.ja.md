@@ -91,14 +91,6 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-region`              | `SAKURACLOUD_REGION`              | `is1a`                   |
 
 
-### `v0.0.1`での注意点
-
-石狩第1ゾーン以外を指定する場合は以下の非公開パラメータを設定してください。
-
- -  - `--sakuracloud-disk-source-archive-id`: コピー元アーカイブID(Ubuntu Server 14.04.2のアーカイブIDを指定)
-
-
-
 ## Author
 
 * Kazumichi Yamamoto ([@yamamoto-febc](https://github.com/yamamoto-febc))
