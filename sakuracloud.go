@@ -83,11 +83,6 @@ type resDisk struct {
 	ID             string
 	Availability   string
 	SizeMB         int
-	Storage        struct {
-		ID         string
-		Class      string
-		MountIndex string
-	}
 }
 
 type resInterface struct {
