@@ -14,7 +14,7 @@ const (
 	sakuraCloudAPIRootSuffix          = "api/cloud/1.1"
 	sakuraCloudPublicImageSearchWords = "Ubuntu%20Server%2014%2064bit"
 	//sakuraCloudPublicImageSearchWords = "Ubuntu"
-	sakuraUbuntuSetupScriptName = "_allow-sudo-for-docker-machine_"
+	sakuraUbuntuSetupScriptName = "_02docker-machine_sakuracloud_v005_"
 	sakuraUbuntuSetupScriptBody = `#!/bin/bash
 
   # @sacloud-once
@@ -25,8 +25,26 @@ const (
 
   export DEBIAN_FRONTEND=noninteractive
 	echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || exit 1
-  sudo apt-get -y update || exit 1
+  apt-get -y update || exit 1
+	apt-get install -y linux-image-3.19.0-33-generic linux-headers-3.19.0-33-generic linux-image-extra-3.19.0-33-generic || exit 1
+	sh -c 'sleep 10; shutdown -h now' &
   exit 0`
+
+	sakuraAddIPForEth1ScriptName       = "_01docker-machine_sakuracloud_v005_"
+	sakuraAddIPForEth1ScriptBodyFormat = `#!/bin/bash
+
+	# @sacloud-once
+	# @sacloud-desc docker-machine-sakuracloud: setup ip address for eth1
+	# @sacloud-desc （このスクリプトは、DebianもしくはUbuntuでのみ動作します）
+	# @sacloud-require-archive distro-debian
+	# @sacloud-require-archive distro-ubuntu
+
+	export DEBIAN_FRONTEND=noninteractive
+	echo "auto eth1" >> /etc/network/interfaces
+	echo "iface eth1 inet static" >> /etc/network/interfaces
+	echo "address %s" >> /etc/network/interfaces
+	echo "netmask %s" >> /etc/network/interfaces
+	exit 0`
 )
 
 type Client struct {
@@ -47,17 +65,12 @@ type ResultFlagValue struct {
 	IsOk bool `json:"is_ok"`
 }
 
-type ConnectedSwitch struct {
-	//TODO 既存スイッチへの接続(ID指定),未接続(null)への対応
-	Scope string
-}
-
 type Server struct {
 	Name              string
 	Description       string
 	ServerPlan        Resource
 	Tags              []string
-	ConnectedSwitches []ConnectedSwitch
+	ConnectedSwitches []map[string]string
 }
 
 type Disk struct {
@@ -204,7 +217,7 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	return data, nil
 }
 
-func (c *Client) Create(spec *Server) (string, error) {
+func (c *Client) Create(spec *Server, addIPAddress string) (string, error) {
 	var (
 		method = "POST"
 		uri    = "server"
@@ -221,7 +234,34 @@ func (c *Client) Create(spec *Server) (string, error) {
 		return "", err
 	}
 
+	if addIPAddress != "" && len(res.Server.Interfaces) > 1 {
+		if err := c.updateIpAddress(spec, res, addIPAddress); err != nil {
+			return "", err
+		}
+	}
+
 	return res.Server.ID, nil
+}
+
+func (c *Client) updateIpAddress(spec *Server, statusRes ServerStatusResponse, ip string) error {
+	type reqInterface struct {
+		Interface map[string]string
+	}
+	var (
+		method = "PUT"
+		uri    = fmt.Sprintf("interface/%s", statusRes.Server.Interfaces[1].ID)
+		body   = reqInterface{
+			Interface: map[string]string{"UserIPAddress": ip},
+		}
+	)
+
+	_, err := c.newRequest(method, uri, body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func (c *Client) CreateDisk(spec *Disk) (string, error) {
@@ -377,8 +417,15 @@ func (c *virtualGuest) GetIP(id string) (string, error) {
 // [PR #1586](https://github.com/docker/machine/pull/1586)がマージされるまで暫定
 // スクリプト(Note)を使ってubuntuユーザがsudo可能にする
 func (c *virtualGuest) GetUbuntuCustomizeNoteId() (string, error) {
-	//TODO ノートのバージョニング
+	return c.getCustomizeNoteId(sakuraUbuntuSetupScriptName, sakuraUbuntuSetupScriptBody)
+}
 
+func (c *virtualGuest) GetAddIPCustomizeNoteId(ip string, subnet string) (string, error) {
+	noteBody := fmt.Sprintf(sakuraAddIPForEth1ScriptBodyFormat, ip, subnet)
+	return c.getCustomizeNoteId(sakuraAddIPForEth1ScriptName, noteBody)
+}
+
+func (c *virtualGuest) getCustomizeNoteId(noteName string, noteBody string) (string, error) {
 	type filter struct {
 		Name string
 	}
@@ -410,7 +457,7 @@ func (c *virtualGuest) GetUbuntuCustomizeNoteId() (string, error) {
 		method = "GET"
 		uri    = "note"
 		body   = noteRequest{
-			Filter: filter{Name: sakuraUbuntuSetupScriptName},
+			Filter: filter{Name: noteName},
 		}
 	)
 	bodyJSON, err := json.Marshal(body)
@@ -437,8 +484,8 @@ func (c *virtualGuest) GetUbuntuCustomizeNoteId() (string, error) {
 	uri = "note"
 	n := createNodeWrap{
 		Note: createNoteData{
-			Name:    sakuraUbuntuSetupScriptName,
-			Content: sakuraUbuntuSetupScriptBody,
+			Name:    noteName,
+			Content: noteBody,
 		},
 	}
 
@@ -452,6 +499,20 @@ func (c *virtualGuest) GetUbuntuCustomizeNoteId() (string, error) {
 	}
 
 	return s.Note.ID, nil
+
+}
+
+func (c *virtualGuest) DeleteNote(id string) error {
+	var (
+		method = "DELETE"
+		uri    = fmt.Sprintf("note/%s", id)
+	)
+
+	_, err := c.newRequest(method, uri, nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *virtualGuest) GetUbuntuArchiveId() (string, error) {

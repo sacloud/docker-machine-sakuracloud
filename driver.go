@@ -16,13 +16,15 @@ import (
 )
 
 const (
-	defaultRegion          = "is1a"    // 石狩第１ゾーン
-	defaultPlan            = "1001"    //TODO プラン名称から設定できるようにする? or コアとメモリを個別に指定できるようにする?
-	defaultConnectedSwitch = "shared"  // 共有セグメント
-	defaultDiskPlan        = "4"       // SSD
-	defaultDiskSize        = 20480     // 20GB
-	defaultDiskName        = "disk001" // ディスク名
-	defaultDiskConnection  = "virtio"  // virtio
+	defaultRegion               = "is1a"          // 石狩第１ゾーン
+	defaultPlan                 = "1001"          //TODO プラン名称から設定できるようにする? or コアとメモリを個別に指定できるようにする?
+	defaultConnectedSwitch      = ""              // 追加で接続するSwitchのID
+	defaultAdditionalIP         = ""              // 追加で接続するSwitch用NICのIP
+	defaultAdditionalSubnetMask = "255.255.255.0" // 追加で接続するSwitch用NICのIP
+	defaultDiskPlan             = "4"             // SSD
+	defaultDiskSize             = 20480           // 20GB
+	defaultDiskName             = "disk001"       // ディスク名
+	defaultDiskConnection       = "virtio"        // virtio
 )
 
 type Driver struct {
@@ -34,15 +36,17 @@ type Driver struct {
 }
 
 type sakuraServerConfig struct {
-	HostName            string
-	Plan                string
-	ConnectedSwitch     string
-	DiskPlan            string
-	DiskSize            int
-	DiskName            string
-	DiskConnection      string
-	DiskSourceArchiveId string
-	Password            string
+	HostName             string
+	Plan                 string
+	ConnectedSwitch      string
+	AdditionalIP         string
+	AdditionalSubnetMask string
+	DiskPlan             string
+	DiskSize             int
+	DiskName             string
+	DiskConnection       string
+	DiskSourceArchiveId  string
+	Password             string
 }
 
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
@@ -77,8 +81,20 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			EnvVar: "SAKURACLOUD_CONNECTED_SWITCH",
 			Name:   "sakuracloud-connected-switch",
-			Usage:  "sakuracloud connected switch['shared'/switch ID]",
+			Usage:  "sakuracloud connected switch['switch ID']",
 			Value:  defaultConnectedSwitch,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "SAKURACLOUD_ADDITIONAL_IP",
+			Name:   "sakuracloud-additional-ip",
+			Usage:  "sakuracloud additional ip['xxx.xxx.xxx.xxx']",
+			Value:  defaultAdditionalIP,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "SAKURACLOUD_ADDITIONAL_SUBNET_MASK",
+			Name:   "sakuracloud-additional-subnet-mask",
+			Usage:  "sakuracloud additional subnetmask['255.255.255.0']",
+			Value:  defaultAdditionalIP,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "SAKURACLOUD_DISK_PLAN",
@@ -125,11 +141,13 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 		},
 		Client: &Client{},
 		serverConfig: &sakuraServerConfig{
-			Plan:            defaultPlan,
-			ConnectedSwitch: defaultConnectedSwitch,
-			DiskPlan:        defaultDiskPlan,
-			DiskSize:        defaultDiskSize,
-			DiskName:        defaultDiskName,
+			Plan:                 defaultPlan,
+			ConnectedSwitch:      defaultConnectedSwitch,
+			AdditionalIP:         defaultAdditionalIP,
+			AdditionalSubnetMask: defaultAdditionalSubnetMask,
+			DiskPlan:             defaultDiskPlan,
+			DiskSize:             defaultDiskSize,
+			DiskName:             defaultDiskName,
 		},
 	}
 }
@@ -149,6 +167,9 @@ func validateSakuraServerConfig(c *sakuraServerConfig) error {
 	//TODO さくら用設定のバリデーション
 
 	//ex. プランの存在確認や矛盾した設定の検出など
+	if c.ConnectedSwitch != "" && (c.AdditionalIP == "" || c.AdditionalSubnetMask == "") {
+		return fmt.Errorf("Missing Additional IP or subnet --sakuracloud-additional-ip/subnet-mask")
+	}
 
 	return nil
 }
@@ -172,14 +193,16 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	}
 
 	d.serverConfig = &sakuraServerConfig{
-		HostName:            flags.String("sakuracloud-host-name"),
-		Plan:                flags.String("sakuracloud-plan"),
-		ConnectedSwitch:     flags.String("sakuracloud-connected-switch"),
-		DiskPlan:            flags.String("sakuracloud-disk-plan"),
-		DiskSize:            flags.Int("sakuracloud-disk-size"),
-		DiskName:            flags.String("sakuracloud-disk-name"),
-		DiskConnection:      flags.String("sakuracloud-disk-connection"),
-		DiskSourceArchiveId: flags.String("sakuracloud-disk-source-archive-id"),
+		HostName:             flags.String("sakuracloud-host-name"),
+		Plan:                 flags.String("sakuracloud-plan"),
+		ConnectedSwitch:      flags.String("sakuracloud-connected-switch"),
+		AdditionalIP:         flags.String("sakuracloud-additional-ip"),
+		AdditionalSubnetMask: flags.String("sakuracloud-additional-subnet-mask"),
+		DiskPlan:             flags.String("sakuracloud-disk-plan"),
+		DiskSize:             flags.Int("sakuracloud-disk-size"),
+		DiskName:             flags.String("sakuracloud-disk-name"),
+		DiskConnection:       flags.String("sakuracloud-disk-connection"),
+		DiskSourceArchiveId:  flags.String("sakuracloud-disk-source-archive-id"),
 	}
 
 	if d.serverConfig.HostName == "" {
@@ -262,7 +285,7 @@ func (d *Driver) Create() error {
 	}
 
 	//create server
-	id, err := d.getClient().VirtualGuest().Create(spec)
+	id, err := d.getClient().VirtualGuest().Create(spec, d.serverConfig.AdditionalIP)
 	if err != nil {
 		return fmt.Errorf("Error creating host: %v", err)
 	}
@@ -276,6 +299,11 @@ func (d *Driver) Create() error {
 	//setup note(script)
 	noteId, err := d.getClient().VirtualGuest().GetUbuntuCustomizeNoteId()
 	if err != nil || noteId == "" {
+		return fmt.Errorf("Error creating custom note: %v", err)
+	}
+
+	addIpNoteId, err := d.getClient().VirtualGuest().GetAddIPCustomizeNoteId(d.serverConfig.AdditionalIP, d.serverConfig.AdditionalSubnetMask)
+	if err != nil {
 		return fmt.Errorf("Error creating custom note: %v", err)
 	}
 
@@ -298,7 +326,7 @@ func (d *Driver) Create() error {
 	}
 
 	//edit disk
-	editDiskSpec := d.buildSakuraDiskEditSpec(publicKey, noteId)
+	editDiskSpec := d.buildSakuraDiskEditSpec(publicKey, noteId, addIpNoteId)
 	editSuccess, err := d.getClient().VirtualGuest().EditDisk(diskId, editDiskSpec)
 	if err != nil || !editSuccess {
 		return fmt.Errorf("Error editting disk: %v", err)
@@ -313,6 +341,26 @@ func (d *Driver) Create() error {
 	}
 	//wait for startup
 	d.waitForServerByState(state.Running)
+
+	time.Sleep(10 * time.Second)
+
+	//wait for applay startup script and shutdown
+	d.waitForServerByState(state.Stopped)
+
+	//restart
+	err = d.getClient().VirtualGuest().PowerOn(id)
+	if err != nil {
+		return fmt.Errorf("Error starting server: %v", err)
+	}
+	//wait for startup
+	d.waitForServerByState(state.Running)
+
+	if addIpNoteId != "" {
+		err = d.getClient().VirtualGuest().DeleteNote(addIpNoteId)
+		if err != nil {
+			return fmt.Errorf("Error deleting note: %v", err)
+		}
+	}
 
 	return nil
 }
@@ -360,15 +408,21 @@ func (d *Driver) waitForDiskAvailable() {
 }
 
 func (d *Driver) buildSakuraServerSpec() *Server {
+
+	var network []map[string]string
+	if d.serverConfig.ConnectedSwitch == "" {
+		network = []map[string]string{{"Scope": "shared"}}
+	} else {
+		network = []map[string]string{{"Scope": "shared"}, {"ID": d.serverConfig.ConnectedSwitch}}
+	}
+
 	spec := &Server{
 		Name:        d.serverConfig.HostName,
 		Description: "",
 		ServerPlan: Resource{
 			ID: d.serverConfig.Plan,
 		},
-		ConnectedSwitches: []ConnectedSwitch{
-			ConnectedSwitch{Scope: d.serverConfig.ConnectedSwitch},
-		},
+		ConnectedSwitches: network,
 	}
 
 	log.Infof("Build host spec %#v", spec)
@@ -391,15 +445,27 @@ func (d *Driver) buildSakuraDiskSpec() *Disk {
 	return spec
 }
 
-func (d *Driver) buildSakuraDiskEditSpec(publicKey string, noteId string) *DiskEditValue {
+func (d *Driver) buildSakuraDiskEditSpec(publicKey string, noteId string, addIpNoteId string) *DiskEditValue {
+
+	var notes []Resource
+	if addIpNoteId == "" {
+		notes = []Resource{
+			Resource{ID: noteId},
+		}
+	} else {
+		notes = []Resource{
+			Resource{ID: noteId},
+			Resource{ID: addIpNoteId},
+		}
+
+	}
+
 	spec := &DiskEditValue{
 		Password: d.serverConfig.Password,
 		SSHKey: SSHKey{
 			PublicKey: publicKey,
 		},
-		Notes: []Resource{
-			Resource{ID: noteId},
-		},
+		Notes: notes,
 	}
 	log.Infof("Build disk edit spec %#v", spec)
 	return spec

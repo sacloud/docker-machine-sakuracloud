@@ -5,8 +5,8 @@
 docker-machine 0.5にて[マージ](https://github.com/docker/machine/pull/1902)された、外部プラグイン機構に対応しています。
 
 ## 動作環境
-* [Docker Machine](https://docs.docker.com/machine/) 0.5.0+ (is bundled to
-  [Docker Toolbox](https://www.docker.com/docker-toolbox) 1.9.0+)
+* [Docker Machine](https://docs.docker.com/machine/) 0.5.1+ (is bundled to
+  [Docker Toolbox](https://www.docker.com/docker-toolbox) 1.9.1+)
 
 ## 動作確認済み環境
 * OSX 10.9+  : amd64
@@ -53,6 +53,9 @@ $ docker-machine create --driver=sakuracloud \
 
  - `--sakuracloud-access-token`: **必須** アクセストークン
  - `--sakuracloud-access-token-secret`: **必須** アクセストークンシークレット
+ - `--sakuracloud-connected-switch`: 接続するスイッチ or ルーターのID(eth1)
+ - `--sakuracloud-additional-ip`: eth1のIPアドレス
+ - `--sakuracloud-additional-subnet-mask`: eth1のサブネットマスク
  - `--sakuracloud-disk-connection`: ディスクインターフェース (`virtio` or `ide`)
  - `--sakuracloud-disk-name`: さくらのクラウド上に作成するディスクの名前
  - `--sakuracloud-disk-plan`: ディスクプラン (HDD:`2` or SSD:`4`)
@@ -83,6 +86,9 @@ Sandboxリージョンについては外部からログインができないた�
 |-------------------------------------|-----------------------------------|--------------------------|
 | `--sakuracloud-access-token`        | `SAKURACLOUD_ACCESS_TOKEN`        | -                        |
 | `--sakuracloud-access-token-secret` | `SAKURACLOUD_ACCESS_TOKEN_SECRET` | -                        |
+| `--sakuracloud-connected-switch`    | `SAKURACLOUD_CONNECTED_SWITCH`     | -                 |
+| `--sakuracloud-additional-ip`       | `SAKURACLOUD_ADDITIONAL_IP`     | -                 |
+| `--sakuracloud-additional-subnet-mask`     | `SAKURACLOUD_ADDITIONAL_SUBNET_MASK`     | `255.255.255.0`                 |
 | `--sakuracloud-disk-connection`     | `SAKURACLOUD_DISK_CONNECTION`     | `virtio`                 |
 | `--sakuracloud-disk-name`           | `SAKURACLOUD_DISK_NAME`           | `disk001`                |
 | `--sakuracloud-disk-plan`           | `SAKURACLOUD_DISK_PLAN`           | `4`                      |

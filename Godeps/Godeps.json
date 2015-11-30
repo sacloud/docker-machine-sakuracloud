@@ -8,37 +8,53 @@
 	],
 	"Deps": [
 		{
-			"ImportPath": "github.com/davecgh/go-spew/spew",
-			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
-		},
-		{
 			"ImportPath": "github.com/docker/docker/pkg/term",
-			"Comment": "v1.4.1-7573-g10df564",
-			"Rev": "10df5647bd5c9e5946412bd58fefb5323f67bc49"
+			"Comment": "v1.5.0",
+			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/commands/mcndirs",
-			"Comment": "v0.5.0-46-ga5a53bf",
-			"Rev": "a5a53bfbdd9aa1bdaabed2c38c815b50fb1e9e40"
+			"Comment": "v0.5.1-185-g4855418",
+			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
 		},
 		{
-			"ImportPath": "github.com/docker/machine/drivers/none",
-			"Comment": "v0.5.0-46-ga5a53bf",
-			"Rev": "a5a53bfbdd9aa1bdaabed2c38c815b50fb1e9e40"
+			"ImportPath": "github.com/docker/machine/libmachine/drivers",
+			"Comment": "v0.5.1-185-g4855418",
+			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
 		},
 		{
-			"ImportPath": "github.com/docker/machine/libmachine",
-			"Comment": "v0.5.0-46-ga5a53bf",
-			"Rev": "a5a53bfbdd9aa1bdaabed2c38c815b50fb1e9e40"
+			"ImportPath": "github.com/docker/machine/libmachine/log",
+			"Comment": "v0.5.1-185-g4855418",
+			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
 		},
 		{
-			"ImportPath": "github.com/pmezard/go-difflib/difflib",
-			"Rev": "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
+			"ImportPath": "github.com/docker/machine/libmachine/mcnflag",
+			"Comment": "v0.5.1-185-g4855418",
+			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/libmachine/mcnutils",
+			"Comment": "v0.5.1-185-g4855418",
+			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/libmachine/ssh",
+			"Comment": "v0.5.1-185-g4855418",
+			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/libmachine/state",
+			"Comment": "v0.5.1-185-g4855418",
+			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/libmachine/version",
+			"Comment": "v0.5.1-185-g4855418",
+			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Comment": "v1.0-79-ge7a1d88",
-			"Rev": "e7a1d8890c7638d7bb50e3e498de4a1e913a28cf"
+			"Rev": "e4ec8152c15fc46bd5056ce65997a07c7d415325"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",
