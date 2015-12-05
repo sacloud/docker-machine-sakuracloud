@@ -302,9 +302,14 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Error creating custom note: %v", err)
 	}
 
-	addIpNoteId, err := d.getClient().VirtualGuest().GetAddIPCustomizeNoteId(d.serverConfig.AdditionalIP, d.serverConfig.AdditionalSubnetMask)
-	if err != nil {
-		return fmt.Errorf("Error creating custom note: %v", err)
+	var addIpNoteId = ""
+
+	if d.serverConfig.ConnectedSwitch != "" {
+		var err error
+		addIpNoteId, err = d.getClient().VirtualGuest().GetAddIPCustomizeNoteId(d.serverConfig.AdditionalIP, d.serverConfig.AdditionalSubnetMask)
+		if err != nil {
+			return fmt.Errorf("Error creating custom note: %v", err)
+		}
 	}
 
 	// create disk( from public archive 'Ubuntu')
