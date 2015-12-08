@@ -14,7 +14,13 @@ to create Docker hosts on [SAKURA CLOUD](http://cloud.sakura.ad.jp)
 * Windows 10
 
 ## Installation
-#### Install via Homebrew(for OSX):
+
+#### Install for Windows
+
+Download the installer from [here](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.6/DockerMachineSakuracloudSetup.exe)
+ and run it.
+
+#### Install for OSX:
 
 ```console
 $ brew tap yamamoto-febc/docker-machine-sakuracloud
@@ -51,8 +57,10 @@ Options:
  - `--sakuracloud-access-token`: **required** Your personal access token for the SAKURA CLOUD API.
  - `--sakuracloud-access-token-secret`: **required** Your personal access token secret for the SAKURA CLOUD API.
  - `--sakuracloud-connected-switch`: The ID of SAKURA CLOUD switch or router.
- - `--sakuracloud-additional-ip`: The address of eth1 IP.
- - `--sakuracloud-additional-subnet-mask`: The netmask of eth1.
+ - `--sakuracloud-private-ip-only`: The flag of to use private IP only(use eth1 only).
+ - `--sakuracloud-private-ip`: The IP address for eth1.
+ - `--sakuracloud-private-ip-subnet-mask`: The subnet mask for eth1.
+ - `--sakuracloud-gateway`: The default gateway ip address.
  - `--sakuracloud-disk-connection`: The type of disk connection (`virtio` or `ide`).
  - `--sakuracloud-disk-name`: The name of SAKURA CLOUD disk.
  - `--sakuracloud-disk-plan`: The plan of SAKURA CLOUD disk plan (HDD:`2` or SSD:`4`).
@@ -68,8 +76,9 @@ Environment variables and default values:
 | `--sakuracloud-access-token`        | `SAKURACLOUD_ACCESS_TOKEN`        | -                        |
 | `--sakuracloud-access-token-secret` | `SAKURACLOUD_ACCESS_TOKEN_SECRET` | -                        |
 | `--sakuracloud-connected-switch`    | `SAKURACLOUD_CONNECTED_SWITCH`     | -                 |
-| `--sakuracloud-additional-ip`       | `SAKURACLOUD_ADDITIONAL_IP`     | -                 |
-| `--sakuracloud-additional-subnet-mask`     | `SAKURACLOUD_ADDITIONAL_SUBNET_MASK`     | `255.255.255.0`                 |
+| `--sakuracloud-private-ip`       | `SAKURACLOUD_PRIVATE_IP`     | -                 |
+| `--sakuracloud-private-ip-subnet-mask`     | `SAKURACLOUD_PRIVATE_IP_SUBNET_MASK`     | `255.255.255.0`                 |
+| `--sakuracloud-gateway`     | `SAKURACLOUD_GATEWAY`     | -                 |
 | `--sakuracloud-disk-connection`     | `SAKURACLOUD_DISK_CONNECTION`     | `virtio`                 |
 | `--sakuracloud-disk-name`           | `SAKURACLOUD_DISK_NAME`           | `disk001`                |
 | `--sakuracloud-disk-plan`           | `SAKURACLOUD_DISK_PLAN`           | `4`                      |

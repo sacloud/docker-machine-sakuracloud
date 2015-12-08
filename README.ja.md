@@ -16,7 +16,7 @@ docker-machine 0.5にて[マージ](https://github.com/docker/machine/pull/1902)
 
 #### Windowsの場合:
 
-[こちら](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.5/DockerMachineSakuracloudSetup.exe)からインストーラーをダウンロードして実行してください。
+[こちら](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.6/DockerMachineSakuracloudSetup.exe)からインストーラーをダウンロードして実行してください。
 
 #### OSX(Mac)の場合:
 
@@ -61,8 +61,10 @@ $ docker-machine create --driver=sakuracloud \
  - `--sakuracloud-access-token`: **必須** アクセストークン
  - `--sakuracloud-access-token-secret`: **必須** アクセストークンシークレット
  - `--sakuracloud-connected-switch`: 接続するスイッチ or ルーターのID(eth1)
- - `--sakuracloud-additional-ip`: eth1のIPアドレス
- - `--sakuracloud-additional-subnet-mask`: eth1のサブネットマスク
+ - `--sakuracloud-private-ip-only`: 公開セグメントのNICを無効にしeth1のみを使う
+ - `--sakuracloud-private-ip`: eth1のIPアドレス
+ - `--sakuracloud-private-subnet-mask`: eth1のサブネットマスク
+ - `--sakuracloud-gateway`: デフォルトゲートウェイ(eth1を使う場合は必須)
  - `--sakuracloud-disk-connection`: ディスクインターフェース (`virtio` or `ide`)
  - `--sakuracloud-disk-name`: さくらのクラウド上に作成するディスクの名前
  - `--sakuracloud-disk-plan`: ディスクプラン (HDD:`2` or SSD:`4`)
@@ -94,8 +96,9 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-access-token`        | `SAKURACLOUD_ACCESS_TOKEN`        | -                        |
 | `--sakuracloud-access-token-secret` | `SAKURACLOUD_ACCESS_TOKEN_SECRET` | -                        |
 | `--sakuracloud-connected-switch`    | `SAKURACLOUD_CONNECTED_SWITCH`     | -                 |
-| `--sakuracloud-additional-ip`       | `SAKURACLOUD_ADDITIONAL_IP`     | -                 |
-| `--sakuracloud-additional-subnet-mask`     | `SAKURACLOUD_ADDITIONAL_SUBNET_MASK`     | `255.255.255.0`                 |
+| `--sakuracloud-private-ip`       | `SAKURACLOUD_PRIVATE_IP`     | -                 |
+| `--sakuracloud-private-ip-subnet-mask`     | `SAKURACLOUD_PRIVATE_IP_SUBNET_MASK`     | `255.255.255.0`                 |
+| `--sakuracloud-gateway`     | `SAKURACLOUD_GATEWAY`     | -                 |
 | `--sakuracloud-disk-connection`     | `SAKURACLOUD_DISK_CONNECTION`     | `virtio`                 |
 | `--sakuracloud-disk-name`           | `SAKURACLOUD_DISK_NAME`           | `disk001`                |
 | `--sakuracloud-disk-plan`           | `SAKURACLOUD_DISK_PLAN`           | `4`                      |

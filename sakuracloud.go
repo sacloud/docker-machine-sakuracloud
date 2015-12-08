@@ -7,15 +7,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 const (
 	sakuraCloudAPIRoot                = "https://secure.sakura.ad.jp/cloud/zone"
 	sakuraCloudAPIRootSuffix          = "api/cloud/1.1"
 	sakuraCloudPublicImageSearchWords = "Ubuntu%20Server%2014%2064bit"
-	//sakuraCloudPublicImageSearchWords = "Ubuntu"
-	sakuraUbuntuSetupScriptName = "_02docker-machine_sakuracloud_v005_"
-	sakuraUbuntuSetupScriptBody = `#!/bin/bash
+	sakuraUbuntuSetupScriptBody       = `#!/bin/bash
 
   # @sacloud-once
   # @sacloud-desc ubuntuユーザーがsudo出来るように/etc/sudoersを編集します
@@ -30,7 +29,6 @@ const (
 	sh -c 'sleep 10; shutdown -h now' &
   exit 0`
 
-	sakuraAddIPForEth1ScriptName       = "_01docker-machine_sakuracloud_v005_"
 	sakuraAddIPForEth1ScriptBodyFormat = `#!/bin/bash
 
 	# @sacloud-once
@@ -44,27 +42,54 @@ const (
 	echo "iface eth1 inet static" >> /etc/network/interfaces
 	echo "address %s" >> /etc/network/interfaces
 	echo "netmask %s" >> /etc/network/interfaces
+	ifdown eth1; ifup eth1
+	exit 0`
+
+	sakuraChangeDefaultGatewayScriptBody = `#!/bin/bash
+
+	# @sacloud-once
+	# @sacloud-desc docker-machine-sakuracloud: change default gateway
+	# @sacloud-desc （このスクリプトは、DebianもしくはUbuntuでのみ動作します）
+	# @sacloud-require-archive distro-debian
+	# @sacloud-require-archive distro-ubuntu
+
+	export DEBIAN_FRONTEND=noninteractive
+	sed -i 's/gateway/#gateway/g' /etc/network/interfaces
+	echo "up route add default gw %s" >> /etc/network/interfaces
+	exit 0`
+
+	sakuraDisableEth0ScriptBody = `#!/bin/bash
+
+	# @sacloud-once
+	# @sacloud-desc docker-machine-sakuracloud: disable eth0
+	# @sacloud-desc （このスクリプトは、DebianもしくはUbuntuでのみ動作します）
+	# @sacloud-require-archive distro-debian
+	# @sacloud-require-archive distro-ubuntu
+
+	export DEBIAN_FRONTEND=noninteractive
+	sed -i 's/iface eth0 inet static/iface eth0 inet manual/g' /etc/network/interfaces
+	ifdown eth0 || exit 0
 	exit 0`
 )
 
+// Client type of sakuracloud api client config values
 type Client struct {
 	AccessToken       string
 	AccessTokenSecret string
 	Region            string
 }
 
-type virtualGuest struct {
-	*Client
-}
-
+// Resource type of sakuracloud resource(have ID:string)
 type Resource struct {
 	ID string
 }
 
+// ResultFlagValue type of api result
 type ResultFlagValue struct {
 	IsOk bool `json:"is_ok"`
 }
 
+// Server type of create server request values
 type Server struct {
 	Name              string
 	Description       string
@@ -73,6 +98,7 @@ type Server struct {
 	ConnectedSwitches []map[string]string
 }
 
+// Disk type of create disk request values
 type Disk struct {
 	Name          string
 	Plan          Resource
@@ -81,10 +107,12 @@ type Disk struct {
 	SourceArchive Resource
 }
 
+// SSHKey type of sshkey
 type SSHKey struct {
 	PublicKey string
 }
 
+// DiskEditValue type of disk edit request values
 type DiskEditValue struct {
 	Password string
 	SSHKey   SSHKey
@@ -99,15 +127,18 @@ type resDisk struct {
 }
 
 type resInterface struct {
-	ID         string
-	IPAddress  string
-	MACAddress string
+	ID            string
+	IPAddress     string
+	UserIPAddress string
+	MACAddress    string
 }
 
 type createServerRequest struct {
 	Server Server
 	Count  int
 }
+
+// ServerStatusResponse type of server status response values
 type ServerStatusResponse struct {
 	Server struct {
 		ID    string
@@ -129,17 +160,15 @@ type createDiskRequest struct {
 	Disk Disk
 }
 
+// DiskStatusResponse type of disk status response values
 type DiskStatusResponse struct {
 	Disk resDisk
 	ResultFlagValue
 }
 
+// NewClient create new sakuracloud api client
 func NewClient(token, tokenSecret, region string) *Client {
 	return &Client{AccessToken: token, AccessTokenSecret: tokenSecret, Region: region}
-}
-
-func (c *Client) VirtualGuest() *virtualGuest {
-	return &virtualGuest{c}
 }
 
 func (c *Client) getEndpoint() string {
@@ -217,6 +246,7 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	return data, nil
 }
 
+// Create create server
 func (c *Client) Create(spec *Server, addIPAddress string) (string, error) {
 	var (
 		method = "POST"
@@ -235,7 +265,7 @@ func (c *Client) Create(spec *Server, addIPAddress string) (string, error) {
 	}
 
 	if addIPAddress != "" && len(res.Server.Interfaces) > 1 {
-		if err := c.updateIpAddress(spec, res, addIPAddress); err != nil {
+		if err := c.updateIPAddress(spec, res, addIPAddress); err != nil {
 			return "", err
 		}
 	}
@@ -243,7 +273,7 @@ func (c *Client) Create(spec *Server, addIPAddress string) (string, error) {
 	return res.Server.ID, nil
 }
 
-func (c *Client) updateIpAddress(spec *Server, statusRes ServerStatusResponse, ip string) error {
+func (c *Client) updateIPAddress(spec *Server, statusRes ServerStatusResponse, ip string) error {
 	type reqInterface struct {
 		Interface map[string]string
 	}
@@ -264,6 +294,7 @@ func (c *Client) updateIpAddress(spec *Server, statusRes ServerStatusResponse, i
 
 }
 
+// CreateDisk create disk
 func (c *Client) CreateDisk(spec *Disk) (string, error) {
 	var (
 		method = "POST"
@@ -283,10 +314,11 @@ func (c *Client) CreateDisk(spec *Disk) (string, error) {
 	return res.Disk.ID, nil
 }
 
-func (c *Client) EditDisk(diskId string, spec *DiskEditValue) (bool, error) {
+// EditDisk edit disk
+func (c *Client) EditDisk(diskID string, spec *DiskEditValue) (bool, error) {
 	var (
 		method = "PUT"
-		uri    = fmt.Sprintf("%s/%s/config", "disk", diskId)
+		uri    = fmt.Sprintf("%s/%s/config", "disk", diskID)
 		body   = spec
 	)
 
@@ -302,10 +334,11 @@ func (c *Client) EditDisk(diskId string, spec *DiskEditValue) (bool, error) {
 	return true, nil
 }
 
-func (c *Client) ConnectDisk(diskId string, serverId string) (bool, error) {
+// ConnectDisk connect disk
+func (c *Client) ConnectDisk(diskID string, serverID string) (bool, error) {
 	var (
 		method = "PUT"
-		uri    = fmt.Sprintf("%s/%s/to/server/%s", "disk", diskId, serverId)
+		uri    = fmt.Sprintf("%s/%s/to/server/%s", "disk", diskID, serverID)
 	)
 
 	data, err := c.newRequest(method, uri, nil)
@@ -320,7 +353,8 @@ func (c *Client) ConnectDisk(diskId string, serverId string) (bool, error) {
 	return true, nil
 }
 
-func (c *virtualGuest) Delete(id string, disks []string) error {
+// Delete delete server
+func (c *Client) Delete(id string, disks []string) error {
 	var (
 		method = "DELETE"
 		uri    = fmt.Sprintf("%s/%s", "server", id)
@@ -333,7 +367,8 @@ func (c *virtualGuest) Delete(id string, disks []string) error {
 	return nil
 }
 
-func (c *virtualGuest) State(id string) (string, error) {
+// State get server state
+func (c *Client) State(id string) (string, error) {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%s", "server", id)
@@ -350,10 +385,11 @@ func (c *virtualGuest) State(id string) (string, error) {
 	return s.Server.Instance.Status, nil
 }
 
-func (c *virtualGuest) DiskState(diskId string) (string, error) {
+// DiskState get disk state
+func (c *Client) DiskState(diskID string) (string, error) {
 	var (
 		method = "GET"
-		uri    = fmt.Sprintf("%s/%s", "disk", diskId)
+		uri    = fmt.Sprintf("%s/%s", "disk", diskID)
 	)
 
 	data, err := c.newRequest(method, uri, nil)
@@ -368,7 +404,8 @@ func (c *virtualGuest) DiskState(diskId string) (string, error) {
 	return s.Disk.Availability, nil
 }
 
-func (c *virtualGuest) PowerOn(id string) error {
+// PowerOn power on
+func (c *Client) PowerOn(id string) error {
 	var (
 		method = "PUT"
 		uri    = fmt.Sprintf("%s/%s/power", "server", id)
@@ -381,7 +418,8 @@ func (c *virtualGuest) PowerOn(id string) error {
 	return nil
 }
 
-func (c *virtualGuest) PowerOff(id string) error {
+// PowerOff power off
+func (c *Client) PowerOff(id string) error {
 	var (
 		method = "DELETE"
 		uri    = fmt.Sprintf("%s/%s/power", "server", id)
@@ -394,7 +432,8 @@ func (c *virtualGuest) PowerOff(id string) error {
 	return nil
 }
 
-func (c *virtualGuest) GetIP(id string) (string, error) {
+// GetIP get public ip address
+func (c *Client) GetIP(id string, privateIPOnly bool) (string, error) {
 	var (
 		method = "GET"
 		uri    = fmt.Sprintf("%s/%s", "server", id)
@@ -409,23 +448,44 @@ func (c *virtualGuest) GetIP(id string) (string, error) {
 		return "", err
 	}
 
+	if privateIPOnly && len(s.Server.Interfaces) > 1 {
+		return s.Server.Interfaces[1].UserIPAddress, nil
+	}
+
 	return s.Server.Interfaces[0].IPAddress, nil
 }
 
+// GetUbuntuCustomizeNoteID get ubuntu customize note id
 // FIXME
 // workaround for [Non root ssh create sudo can't get password](https://github.com/docker/machine/issues/1569)
 // [PR #1586](https://github.com/docker/machine/pull/1586)がマージされるまで暫定
 // スクリプト(Note)を使ってubuntuユーザがsudo可能にする
-func (c *virtualGuest) GetUbuntuCustomizeNoteId() (string, error) {
-	return c.getCustomizeNoteId(sakuraUbuntuSetupScriptName, sakuraUbuntuSetupScriptBody)
+func (c *Client) GetUbuntuCustomizeNoteID(serverID string) (string, error) {
+	noteName := fmt.Sprintf("_99_%s_%d__", serverID, time.Now().UnixNano())
+	return c.getCustomizeNoteID(noteName, sakuraUbuntuSetupScriptBody)
 }
 
-func (c *virtualGuest) GetAddIPCustomizeNoteId(ip string, subnet string) (string, error) {
+// GetAddIPCustomizeNoteID get add ip customize note id
+func (c *Client) GetAddIPCustomizeNoteID(serverID string, ip string, subnet string) (string, error) {
+	noteName := fmt.Sprintf("_30_%s_%d__", serverID, time.Now().UnixNano())
 	noteBody := fmt.Sprintf(sakuraAddIPForEth1ScriptBodyFormat, ip, subnet)
-	return c.getCustomizeNoteId(sakuraAddIPForEth1ScriptName, noteBody)
+	return c.getCustomizeNoteID(noteName, noteBody)
 }
 
-func (c *virtualGuest) getCustomizeNoteId(noteName string, noteBody string) (string, error) {
+// GetChangeGatewayCustomizeNoteID get change gateway address customize note id
+func (c *Client) GetChangeGatewayCustomizeNoteID(serverID string, gateway string) (string, error) {
+	noteName := fmt.Sprintf("_20_%s_%d__", serverID, time.Now().UnixNano())
+	noteBody := fmt.Sprintf(sakuraChangeDefaultGatewayScriptBody, gateway)
+	return c.getCustomizeNoteID(noteName, noteBody)
+}
+
+// GetDisableEth0CustomizeNoteID get disable eth0 customize note id
+func (c *Client) GetDisableEth0CustomizeNoteID(serverID string) (string, error) {
+	noteName := fmt.Sprintf("_10_%s_%d__", serverID, time.Now().UnixNano())
+	return c.getCustomizeNoteID(noteName, sakuraDisableEth0ScriptBody)
+}
+
+func (c *Client) getCustomizeNoteID(noteName string, noteBody string) (string, error) {
 	type filter struct {
 		Name string
 	}
@@ -502,7 +562,8 @@ func (c *virtualGuest) getCustomizeNoteId(noteName string, noteBody string) (str
 
 }
 
-func (c *virtualGuest) DeleteNote(id string) error {
+// DeleteNote delete note
+func (c *Client) DeleteNote(id string) error {
 	var (
 		method = "DELETE"
 		uri    = fmt.Sprintf("note/%s", id)
@@ -515,7 +576,8 @@ func (c *virtualGuest) DeleteNote(id string) error {
 	return nil
 }
 
-func (c *virtualGuest) GetUbuntuArchiveId() (string, error) {
+// GetUbuntuArchiveID get ubuntu archive id
+func (c *Client) GetUbuntuArchiveID() (string, error) {
 	type filter struct {
 		Name  string
 		Scope string
@@ -538,7 +600,6 @@ func (c *virtualGuest) GetUbuntuArchiveId() (string, error) {
 		uri    = "archive"
 		body   = archiveRequest{
 			Filter: filter{
-				//				ID:    "112700954421",
 				Name:  sakuraCloudPublicImageSearchWords,
 				Scope: "shared",
 			},
@@ -563,7 +624,8 @@ func (c *virtualGuest) GetUbuntuArchiveId() (string, error) {
 	//すでに登録されている場合
 	if ubuntu.Count > 0 {
 		return ubuntu.Archives[0].ID, nil
-	} else {
-		return "", errors.New("Archive'Ubuntu Server 14 64bit' not found.")
 	}
+
+	return "", errors.New("Archive'Ubuntu Server 15 64bit' not found.")
+
 }

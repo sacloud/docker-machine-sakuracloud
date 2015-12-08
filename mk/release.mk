@@ -9,6 +9,13 @@ release-pack:
 	find ./bin -type d -mindepth 1 -exec zip -r -j {}.zip {} \;
 
 release: clean dco fmt build-x release-pack release-checksum
+	# Github infos
+	GH_USER ?= $(shell git config --get remote.origin.url | sed -e 's/.*[:/]\(.*\)\/\([^.]*\)\(.*\)/\1/')
+	GH_REPO ?= $(shell git config --get remote.origin.url | sed -e 's/.*[:/]\(.*\)\/\([^.]*\)\(.*\)/\2/')
+
+	$(if $(GITHUB_TOKEN), , \
+			$(error GITHUB_TOKEN must be set for github-release))
+
 	$(if $(GITHUB_TOKEN), , \
 		$(error GITHUB_TOKEN must be set for github-release))
 
