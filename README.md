@@ -76,6 +76,7 @@ Environment variables and default values:
 | `--sakuracloud-access-token`        | `SAKURACLOUD_ACCESS_TOKEN`        | -                        |
 | `--sakuracloud-access-token-secret` | `SAKURACLOUD_ACCESS_TOKEN_SECRET` | -                        |
 | `--sakuracloud-connected-switch`    | `SAKURACLOUD_CONNECTED_SWITCH`     | -                 |
+| `--sakuracloud-private-ip-only`       | `SAKURACLOUD_PRIVATE_IP_ONLY`     | -                 |
 | `--sakuracloud-private-ip`       | `SAKURACLOUD_PRIVATE_IP`     | -                 |
 | `--sakuracloud-private-ip-subnet-mask`     | `SAKURACLOUD_PRIVATE_IP_SUBNET_MASK`     | `255.255.255.0`                 |
 | `--sakuracloud-gateway`     | `SAKURACLOUD_GATEWAY`     | -                 |

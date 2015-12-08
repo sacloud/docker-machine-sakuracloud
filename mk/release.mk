@@ -27,7 +27,7 @@ release: clean dco fmt build-x release-pack release-checksum
 	git tag $(VERSION)
 	git push --tags
 
-	github-release release
+	$(GH_RELEASE) release
 					--user $(GH_USER) \
 					--repo $(GH_REPO) \
 					--tag $(VERSION) \
@@ -36,7 +36,7 @@ release: clean dco fmt build-x release-pack release-checksum
 					--pre-release
 
 	$(foreach MACHINE_FILE, $(wildcard $(PREFIX)/bin/*.zip), \
-		$(shell github-release upload \
+		$(shell $(GH_RELEASE) upload \
 					--user $(GH_USER) \
 					--repo $(GH_REPO) \
 					--tag $(VERSION) \
