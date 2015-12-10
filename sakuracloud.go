@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	sakura "github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cloud/resources"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -25,7 +26,7 @@ const (
   export DEBIAN_FRONTEND=noninteractive
 	echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || exit 1
   apt-get -y update || exit 1
-	apt-get install -y linux-image-3.19.0-33-generic linux-headers-3.19.0-33-generic linux-image-extra-3.19.0-33-generic || exit 1
+	apt-get install -y linux-image-3.19.0-47-generic linux-headers-3.19.0-47-generic linux-image-extra-3.19.0-47-generic || exit 1
 	sh -c 'sleep 10; shutdown -h now' &
   exit 0`
 
@@ -79,93 +80,6 @@ type Client struct {
 	Region            string
 }
 
-// Resource type of sakuracloud resource(have ID:string)
-type Resource struct {
-	ID string
-}
-
-// ResultFlagValue type of api result
-type ResultFlagValue struct {
-	IsOk bool `json:"is_ok"`
-}
-
-// Server type of create server request values
-type Server struct {
-	Name              string
-	Description       string
-	ServerPlan        Resource
-	Tags              []string
-	ConnectedSwitches []map[string]string
-}
-
-// Disk type of create disk request values
-type Disk struct {
-	Name          string
-	Plan          Resource
-	SizeMB        int
-	Connection    string
-	SourceArchive Resource
-}
-
-// SSHKey type of sshkey
-type SSHKey struct {
-	PublicKey string
-}
-
-// DiskEditValue type of disk edit request values
-type DiskEditValue struct {
-	Password string
-	SSHKey   SSHKey
-	Notes    []Resource
-}
-
-type resDisk struct {
-	ReinstallCount int
-	ID             string
-	Availability   string
-	SizeMB         int
-}
-
-type resInterface struct {
-	ID            string
-	IPAddress     string
-	UserIPAddress string
-	MACAddress    string
-}
-
-type createServerRequest struct {
-	Server Server
-	Count  int
-}
-
-// ServerStatusResponse type of server status response values
-type ServerStatusResponse struct {
-	Server struct {
-		ID    string
-		Icon  string
-		Disks []resDisk
-
-		HostName   string
-		Interfaces []resInterface
-
-		Instance struct {
-			Status string
-		}
-	}
-
-	ResultFlagValue
-}
-
-type createDiskRequest struct {
-	Disk Disk
-}
-
-// DiskStatusResponse type of disk status response values
-type DiskStatusResponse struct {
-	Disk resDisk
-	ResultFlagValue
-}
-
 // NewClient create new sakuracloud api client
 func NewClient(token, tokenSecret, region string) *Client {
 	return &Client{AccessToken: token, AccessTokenSecret: tokenSecret, Region: region}
@@ -196,7 +110,6 @@ func (c *Client) isOkStatus(code int) bool {
 		500: false,
 		503: false,
 	}
-
 	return codes[code]
 }
 
@@ -247,11 +160,11 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 }
 
 // Create create server
-func (c *Client) Create(spec *Server, addIPAddress string) (string, error) {
+func (c *Client) Create(spec *sakura.Server, addIPAddress string) (string, error) {
 	var (
 		method = "POST"
 		uri    = "server"
-		body   = createServerRequest{Server: *spec}
+		body   = sakura.Request{Server: spec}
 	)
 
 	data, err := c.newRequest(method, uri, body)
@@ -259,7 +172,7 @@ func (c *Client) Create(spec *Server, addIPAddress string) (string, error) {
 		return "", err
 	}
 
-	var res ServerStatusResponse
+	var res sakura.Response
 	if err := json.Unmarshal(data, &res); err != nil {
 		return "", err
 	}
@@ -273,15 +186,12 @@ func (c *Client) Create(spec *Server, addIPAddress string) (string, error) {
 	return res.Server.ID, nil
 }
 
-func (c *Client) updateIPAddress(spec *Server, statusRes ServerStatusResponse, ip string) error {
-	type reqInterface struct {
-		Interface map[string]string
-	}
+func (c *Client) updateIPAddress(spec *sakura.Server, statusRes sakura.Response, ip string) error {
 	var (
 		method = "PUT"
 		uri    = fmt.Sprintf("interface/%s", statusRes.Server.Interfaces[1].ID)
-		body   = reqInterface{
-			Interface: map[string]string{"UserIPAddress": ip},
+		body   = sakura.Request{
+			Interface: &sakura.Interface{UserIPAddress: ip},
 		}
 	)
 
@@ -295,11 +205,11 @@ func (c *Client) updateIPAddress(spec *Server, statusRes ServerStatusResponse, i
 }
 
 // CreateDisk create disk
-func (c *Client) CreateDisk(spec *Disk) (string, error) {
+func (c *Client) CreateDisk(spec *sakura.Disk) (string, error) {
 	var (
 		method = "POST"
 		uri    = "disk"
-		body   = createDiskRequest{Disk: *spec}
+		body   = sakura.Request{Disk: spec}
 	)
 
 	data, err := c.newRequest(method, uri, body)
@@ -307,7 +217,11 @@ func (c *Client) CreateDisk(spec *Disk) (string, error) {
 		return "", err
 	}
 
-	var res DiskStatusResponse
+	//HACK: さくらのAPI側仕様: 戻り値:Successがbool値へ変換できないため文字列で受ける
+	var res struct {
+		*sakura.Response
+		Success string `json:",omitempty"`
+	}
 	if err := json.Unmarshal(data, &res); err != nil {
 		return "", err
 	}
@@ -315,7 +229,7 @@ func (c *Client) CreateDisk(spec *Disk) (string, error) {
 }
 
 // EditDisk edit disk
-func (c *Client) EditDisk(diskID string, spec *DiskEditValue) (bool, error) {
+func (c *Client) EditDisk(diskID string, spec *sakura.DiskEditValue) (bool, error) {
 	var (
 		method = "PUT"
 		uri    = fmt.Sprintf("%s/%s/config", "disk", diskID)
@@ -327,7 +241,7 @@ func (c *Client) EditDisk(diskID string, spec *DiskEditValue) (bool, error) {
 		return false, err
 	}
 
-	var res DiskStatusResponse
+	var res sakura.Response
 	if err := json.Unmarshal(data, &res); err != nil {
 		return false, err
 	}
@@ -346,7 +260,7 @@ func (c *Client) ConnectDisk(diskID string, serverID string) (bool, error) {
 		return false, err
 	}
 
-	var res ResultFlagValue
+	var res sakura.ResultFlagValue
 	if err := json.Unmarshal(data, &res); err != nil {
 		return false, err
 	}
@@ -378,7 +292,7 @@ func (c *Client) State(id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var s ServerStatusResponse
+	var s sakura.Response
 	if err := json.Unmarshal(data, &s); err != nil {
 		return "", err
 	}
@@ -396,7 +310,7 @@ func (c *Client) DiskState(diskID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var s DiskStatusResponse
+	var s sakura.Response
 	if err := json.Unmarshal(data, &s); err != nil {
 		return "", err
 	}
@@ -443,7 +357,7 @@ func (c *Client) GetIP(id string, privateIPOnly bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var s ServerStatusResponse
+	var s sakura.Response
 	if err := json.Unmarshal(data, &s); err != nil {
 		return "", err
 	}
@@ -486,38 +400,12 @@ func (c *Client) GetDisableEth0CustomizeNoteID(serverID string) (string, error) 
 }
 
 func (c *Client) getCustomizeNoteID(noteName string, noteBody string) (string, error) {
-	type filter struct {
-		Name string
-	}
-	type noteRequest struct {
-		Filter filter
-	}
 
-	type noteData struct {
-		ID           string
-		Name         string
-		Content      string
-		Availability string
-	}
-	type noteResponse struct {
-		Count int
-		Notes []noteData
-	}
-	type createNoteData struct {
-		Name    string
-		Content string
-	}
-	type createNodeWrap struct {
-		Note createNoteData
-	}
-	type responseNoteWrap struct {
-		Note noteData
-	}
 	var (
 		method = "GET"
 		uri    = "note"
-		body   = noteRequest{
-			Filter: filter{Name: noteName},
+		body   = sakura.Request{
+			Filter: map[string]interface{}{"Name": noteName},
 		}
 	)
 	bodyJSON, err := json.Marshal(body)
@@ -529,7 +417,7 @@ func (c *Client) getCustomizeNoteID(noteName string, noteBody string) (string, e
 	if err != nil {
 		return "", err
 	}
-	var existsNote noteResponse
+	var existsNote sakura.SearchResponse
 	if err := json.Unmarshal(data, &existsNote); err != nil {
 		return "", err
 	}
@@ -542,8 +430,8 @@ func (c *Client) getCustomizeNoteID(noteName string, noteBody string) (string, e
 	//ない場合はここで作成する
 	method = "POST"
 	uri = "note"
-	n := createNodeWrap{
-		Note: createNoteData{
+	n := sakura.Request{
+		Note: &sakura.Note{
 			Name:    noteName,
 			Content: noteBody,
 		},
@@ -553,7 +441,7 @@ func (c *Client) getCustomizeNoteID(noteName string, noteBody string) (string, e
 	if err != nil {
 		return "", err
 	}
-	var s responseNoteWrap
+	var s sakura.Response
 	if err := json.Unmarshal(data, &s); err != nil {
 		return "", err
 	}
@@ -578,30 +466,14 @@ func (c *Client) DeleteNote(id string) error {
 
 // GetUbuntuArchiveID get ubuntu archive id
 func (c *Client) GetUbuntuArchiveID() (string, error) {
-	type filter struct {
-		Name  string
-		Scope string
-	}
-	type archiveRequest struct {
-		Filter  filter
-		Include []string
-	}
-
-	type archiveData struct {
-		ID string
-	}
-	type archiveResponse struct {
-		Count    int
-		Archives []archiveData
-	}
 
 	var (
 		method = "GET"
 		uri    = "archive"
-		body   = archiveRequest{
-			Filter: filter{
-				Name:  sakuraCloudPublicImageSearchWords,
-				Scope: "shared",
+		body   = sakura.Request{
+			Filter: map[string]interface{}{
+				"Name":  sakuraCloudPublicImageSearchWords,
+				"Scope": "shared",
 			},
 			Include: []string{"ID", "Name"},
 		}
@@ -616,7 +488,7 @@ func (c *Client) GetUbuntuArchiveID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var ubuntu archiveResponse
+	var ubuntu sakura.SearchResponse
 	if err := json.Unmarshal(data, &ubuntu); err != nil {
 		return "", err
 	}
@@ -626,6 +498,6 @@ func (c *Client) GetUbuntuArchiveID() (string, error) {
 		return ubuntu.Archives[0].ID, nil
 	}
 
-	return "", errors.New("Archive'Ubuntu Server 15 64bit' not found.")
+	return "", errors.New("Archive'Ubuntu Server 14.04 LTS 64bit' not found.")
 
 }

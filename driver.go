@@ -13,6 +13,7 @@ import (
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	sakura "github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cloud/resources"
 )
 
 const (
@@ -484,7 +485,7 @@ func (d *Driver) waitForDiskAvailable() {
 	}
 }
 
-func (d *Driver) buildSakuraServerSpec() *Server {
+func (d *Driver) buildSakuraServerSpec() *sakura.Server {
 
 	var network []map[string]string
 	if d.serverConfig.ConnectedSwitch == "" {
@@ -493,11 +494,12 @@ func (d *Driver) buildSakuraServerSpec() *Server {
 		network = []map[string]string{{"Scope": "shared"}, {"ID": d.serverConfig.ConnectedSwitch}}
 	}
 
-	spec := &Server{
+	serverPlan, _ := strconv.ParseInt(d.serverConfig.Plan, 10, 64)
+	spec := &sakura.Server{
 		Name:        d.serverConfig.HostName,
 		Description: "",
-		ServerPlan: Resource{
-			ID: d.serverConfig.Plan,
+		ServerPlan: sakura.NumberResource{
+			ID: serverPlan,
 		},
 		ConnectedSwitches: network,
 	}
@@ -505,15 +507,16 @@ func (d *Driver) buildSakuraServerSpec() *Server {
 	log.Infof("Build host spec %#v", spec)
 	return spec
 }
-func (d *Driver) buildSakuraDiskSpec() *Disk {
-	spec := &Disk{
+func (d *Driver) buildSakuraDiskSpec() *sakura.Disk {
+	diskPlan, _ := strconv.ParseInt(d.serverConfig.DiskPlan, 10, 64)
+	spec := &sakura.Disk{
 		Name: d.serverConfig.DiskName,
-		Plan: Resource{
-			ID: d.serverConfig.DiskPlan,
+		Plan: sakura.NumberResource{
+			ID: diskPlan,
 		},
 		SizeMB:     d.serverConfig.DiskSize,
 		Connection: d.serverConfig.DiskConnection,
-		SourceArchive: Resource{
+		SourceArchive: sakura.Resource{
 			ID: d.serverConfig.DiskSourceArchiveID,
 		},
 	}
@@ -522,15 +525,15 @@ func (d *Driver) buildSakuraDiskSpec() *Disk {
 	return spec
 }
 
-func (d *Driver) buildSakuraDiskEditSpec(publicKey string, noteIDs []string) *DiskEditValue {
-	notes := make([]Resource, len(noteIDs))
+func (d *Driver) buildSakuraDiskEditSpec(publicKey string, noteIDs []string) *sakura.DiskEditValue {
+	notes := make([]sakura.Resource, len(noteIDs))
 	for n := range noteIDs {
-		notes[n] = Resource{ID: noteIDs[n]}
+		notes[n] = sakura.Resource{ID: noteIDs[n]}
 	}
 
-	spec := &DiskEditValue{
+	spec := &sakura.DiskEditValue{
 		Password: d.serverConfig.Password,
-		SSHKey: SSHKey{
+		SSHKey: sakura.SSHKey{
 			PublicKey: publicKey,
 		},
 		Notes: notes[:],
