@@ -14,47 +14,51 @@
 		},
 		{
 			"ImportPath": "github.com/docker/machine/commands/mcndirs",
-			"Comment": "v0.5.1-185-g4855418",
-			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+			"Comment": "v0.6.0-rc1-22-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/drivers",
-			"Comment": "v0.5.1-185-g4855418",
-			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+			"Comment": "v0.6.0-rc1-22-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/log",
-			"Comment": "v0.5.1-185-g4855418",
-			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+			"Comment": "v0.6.0-rc1-22-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/mcnflag",
-			"Comment": "v0.5.1-185-g4855418",
-			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+			"Comment": "v0.6.0-rc1-22-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/mcnutils",
-			"Comment": "v0.5.1-185-g4855418",
-			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+			"Comment": "v0.6.0-rc1-22-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/ssh",
-			"Comment": "v0.5.1-185-g4855418",
-			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+			"Comment": "v0.6.0-rc1-22-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/state",
-			"Comment": "v0.5.1-185-g4855418",
-			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+			"Comment": "v0.6.0-rc1-22-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/version",
-			"Comment": "v0.5.1-185-g4855418",
-			"Rev": "48554182f13ba73dd96d124f4fdcb6789dec5efe"
+			"Comment": "v0.6.0-rc1-22-g474363d",
+			"Rev": "474363d27a01df04a1fb24af457f96db50037503"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
 			"Rev": "e4ec8152c15fc46bd5056ce65997a07c7d415325"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/curve25519",
+			"Rev": "1fbbd62cfec66bd39d91e97749579579d4d3037e"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",

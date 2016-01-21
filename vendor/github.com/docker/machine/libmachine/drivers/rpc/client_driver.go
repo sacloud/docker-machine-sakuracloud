@@ -3,7 +3,10 @@ package rpcdriver
 import (
 	"fmt"
 	"net/rpc"
+	"sync"
 	"time"
+
+	"io"
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
@@ -14,8 +17,25 @@ import (
 )
 
 var (
-	heartbeatInterval = 200 * time.Millisecond
+	heartbeatInterval = 5 * time.Second
 )
+
+type RPCClientDriverFactory interface {
+	NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, error)
+	io.Closer
+}
+
+type DefaultRPCClientDriverFactory struct {
+	openedDrivers     []*RPCClientDriver
+	openedDriversLock sync.Locker
+}
+
+func NewRPCClientDriverFactory() RPCClientDriverFactory {
+	return &DefaultRPCClientDriverFactory{
+		openedDrivers:     []*RPCClientDriver{},
+		openedDriversLock: &sync.Mutex{},
+	}
+}
 
 type RPCClientDriver struct {
 	plugin          localbinary.DriverPlugin
@@ -30,8 +50,9 @@ type RPCCall struct {
 }
 
 type InternalClient struct {
-	MachineName string
-	RPCClient   *rpc.Client
+	MachineName    string
+	RPCClient      *rpc.Client
+	rpcServiceName string
 }
 
 const (
@@ -62,24 +83,41 @@ const (
 	RestartMethod            = `.Restart`
 	KillMethod               = `.Kill`
 	UpgradeMethod            = `.Upgrade`
-	LocalArtifactPathMethod  = `.LocalArtifactPath`
-	GlobalArtifactPathMethod = `.GlobalArtifactPath`
 )
 
 func (ic *InternalClient) Call(serviceMethod string, args interface{}, reply interface{}) error {
 	if serviceMethod != HeartbeatMethod {
 		log.Debugf("(%s) Calling %+v", ic.MachineName, serviceMethod)
 	}
-	return ic.RPCClient.Call(RPCServiceNameV1+serviceMethod, args, reply)
+	return ic.RPCClient.Call(ic.rpcServiceName+serviceMethod, args, reply)
+}
+
+func (ic *InternalClient) switchToV0() {
+	ic.rpcServiceName = RPCServiceNameV0
 }
 
 func NewInternalClient(rpcclient *rpc.Client) *InternalClient {
 	return &InternalClient{
-		RPCClient: rpcclient,
+		RPCClient:      rpcclient,
+		rpcServiceName: RPCServiceNameV1,
 	}
 }
 
-func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, error) {
+func (f *DefaultRPCClientDriverFactory) Close() error {
+	f.openedDriversLock.Lock()
+	defer f.openedDriversLock.Unlock()
+
+	for _, openedDriver := range f.openedDrivers {
+		if err := openedDriver.close(); err != nil {
+			log.Warnf("Error closing a plugin driver: %s", err)
+		}
+	}
+	f.openedDrivers = []*RPCClientDriver{}
+
+	return nil
+}
+
+func (f *DefaultRPCClientDriverFactory) NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, error) {
 	mcnName := ""
 
 	p, err := localbinary.NewPlugin(driverName)
@@ -110,31 +148,39 @@ func NewRPCClientDriver(driverName string, rawDriver []byte) (*RPCClientDriver, 
 		heartbeatDoneCh: make(chan bool),
 	}
 
-	go func(c *RPCClientDriver) {
-		for {
-			select {
-			case <-c.heartbeatDoneCh:
-				return
-			default:
-				if err := c.Client.Call(HeartbeatMethod, struct{}{}, nil); err != nil {
-					log.Warnf("Error attempting heartbeat call to plugin server: %s", err)
-					c.Close()
-					return
-				}
-				time.Sleep(heartbeatInterval)
-			}
-		}
-	}(c)
+	f.openedDriversLock.Lock()
+	f.openedDrivers = append(f.openedDrivers, c)
+	f.openedDriversLock.Unlock()
 
 	var serverVersion int
 	if err := c.Client.Call(GetVersionMethod, struct{}{}, &serverVersion); err != nil {
-		return nil, err
+		// this is the first call we make to the server. We try to play nice with old pre 0.5.1 client,
+		// by gracefully trying old RPCServiceName, we do this only once, and keep the result for future calls.
+		log.Debugf(err.Error())
+		log.Debugf("Client (%s) with %s does not work, re-attempting with %s", c.Client.MachineName, RPCServiceNameV1, RPCServiceNameV0)
+		c.Client.switchToV0()
+		if err := c.Client.Call(GetVersionMethod, struct{}{}, &serverVersion); err != nil {
+			return nil, err
+		}
 	}
 
 	if serverVersion != version.APIVersion {
 		return nil, fmt.Errorf("Driver binary uses an incompatible API version (%d)", serverVersion)
 	}
 	log.Debug("Using API Version ", serverVersion)
+
+	go func(c *RPCClientDriver) {
+		for {
+			select {
+			case <-c.heartbeatDoneCh:
+				return
+			case <-time.After(heartbeatInterval):
+				if err := c.Client.Call(HeartbeatMethod, struct{}{}, nil); err != nil {
+					log.Warnf("Error attempting heartbeat call to plugin server: %s", err)
+				}
+			}
+		}
+	}(c)
 
 	if err := c.SetConfigRaw(rawDriver); err != nil {
 		return nil, err
@@ -156,15 +202,9 @@ func (c *RPCClientDriver) UnmarshalJSON(data []byte) error {
 	return c.SetConfigRaw(data)
 }
 
-func (c *RPCClientDriver) Close() error {
+func (c *RPCClientDriver) close() error {
 	c.heartbeatDoneCh <- true
 	close(c.heartbeatDoneCh)
-
-	log.Debug("Making call to close connection to plugin binary")
-
-	if err := c.plugin.Close(); err != nil {
-		return err
-	}
 
 	log.Debug("Making call to close driver server")
 
@@ -173,6 +213,12 @@ func (c *RPCClientDriver) Close() error {
 	}
 
 	log.Debug("Successfully made call to close driver server")
+
+	log.Debug("Making call to close connection to plugin binary")
+
+	if err := c.plugin.Close(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -314,25 +360,6 @@ func (c *RPCClientDriver) Restart() error {
 
 func (c *RPCClientDriver) Kill() error {
 	return c.Client.Call(KillMethod, struct{}{}, nil)
-}
-
-func (c *RPCClientDriver) LocalArtifactPath(file string) string {
-	var path string
-
-	if err := c.Client.Call(LocalArtifactPathMethod, file, &path); err != nil {
-		log.Warnf("Error attempting call to get LocalArtifactPath: %s", err)
-	}
-
-	return path
-}
-
-func (c *RPCClientDriver) GlobalArtifactPath() string {
-	globalArtifactPath, err := c.rpcStringCall(GlobalArtifactPathMethod)
-	if err != nil {
-		log.Warnf("Error attempting call to get GlobalArtifactPath: %s", err)
-	}
-
-	return globalArtifactPath
 }
 
 func (c *RPCClientDriver) Upgrade() error {

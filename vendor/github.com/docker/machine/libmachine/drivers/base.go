@@ -2,8 +2,6 @@ package drivers
 
 import (
 	"errors"
-	"fmt"
-	"net"
 	"path/filepath"
 )
 
@@ -41,10 +39,6 @@ func (d *BaseDriver) GetIP() (string, error) {
 	if d.IPAddress == "" {
 		return "", errors.New("IP address is not set")
 	}
-	ip := net.ParseIP(d.IPAddress)
-	if ip == nil {
-		return "", fmt.Errorf("IP address is invalid: %s", d.IPAddress)
-	}
 	return d.IPAddress, nil
 }
 
@@ -81,4 +75,11 @@ func (d *BaseDriver) PreCreateCheck() error {
 // ResolveStorePath returns the store path where the machine is
 func (d *BaseDriver) ResolveStorePath(file string) string {
 	return filepath.Join(d.StorePath, "machines", d.MachineName, file)
+}
+
+// SetSwarmConfigFromFlags configures the driver for swarm
+func (d *BaseDriver) SetSwarmConfigFromFlags(flags DriverOptions) {
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
 }
