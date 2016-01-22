@@ -16,7 +16,7 @@ docker-machine 0.5にて[マージ](https://github.com/docker/machine/pull/1902)
 
 #### Windowsの場合:
 
-[こちら](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.6/DockerMachineSakuracloudSetup.exe)からインストーラーをダウンロードして実行してください。
+[こちら](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.7/DockerMachineSakuracloudSetup.exe)からインストーラーをダウンロードして実行してください。
 
 #### OSX(Mac)の場合:
 
