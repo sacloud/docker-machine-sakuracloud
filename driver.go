@@ -502,6 +502,9 @@ func (d *Driver) buildSakuraServerSpec() *sakura.Server {
 			ID: serverPlan,
 		},
 		ConnectedSwitches: network,
+		Tags: []string{
+			"@virtio-net-pci",
+		},
 	}
 
 	log.Infof("Build host spec %#v", spec)
