@@ -67,6 +67,9 @@ Options:
  - `--sakuracloud-disk-size`: The size of disk for the SAKURA CLOUD server(in MB).
  - `--sakuracloud-plan`: The id of SAKURA CLOUD server plan.
  - `--sakuracloud-region`: The resion to create the server in.
+ - `--sakuracloud-group`: The @group tag.
+ - `--sakuracloud-auto-reboot`: The @auto-reboot tag.
+ - `--sakuracloud-ignore-virtio-net`: The flag of to not set @virtio-net-pci tag.
 
 
 Environment variables and default values:
@@ -86,6 +89,9 @@ Environment variables and default values:
 | `--sakuracloud-disk-size`           | `SAKURACLOUD_DISK_SIZE`           | `20480`                  |
 | `--sakuracloud-plan`                | `SAKURACLOUD_PLAN`                | `1001`                   |
 | `--sakuracloud-region`              | `SAKURACLOUD_REGION`              | `is1a`                   |
+| `--sakuracloud-group`               | `SAKURACLOUD_GROUP`              | -                   |
+| `--sakuracloud-auto-reboot`         | `SAKURACLOUD_AUTO_REBOOT`        | -                   |
+| `--sakuracloud-ignore-virtio-net`   | `SAKURACLOUD_IGNORE_VIRTIO_NET`  | -                   |
 
 
 ## Author

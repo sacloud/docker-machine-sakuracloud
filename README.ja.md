@@ -71,6 +71,9 @@ $ docker-machine create --driver=sakuracloud \
  - `--sakuracloud-disk-size`: ディスクサイズ(MB単位)
  - `--sakuracloud-plan`: サーバプラン
  - `--sakuracloud-region`: リージョン名
+ - `--sakuracloud-group`: @group 特殊タグ
+ - `--sakuracloud-auto-reboot`: @auto-reboot 特殊タグ
+ - `--sakuracloud-ignore-virtio-net`: 順仮想化ドライバの無効化(@virtio-net-pci 特殊タグの無効化)
 
 
 `--sakuracloud-disk-size`はさくらのクラウドでサポートされるサイズのみ指定可能です。
@@ -106,6 +109,9 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-disk-size`           | `SAKURACLOUD_DISK_SIZE`           | `20480`                  |
 | `--sakuracloud-plan`                | `SAKURACLOUD_PLAN`                | `1001`                   |
 | `--sakuracloud-region`              | `SAKURACLOUD_REGION`              | `is1a`                   |
+| `--sakuracloud-group`               | `SAKURACLOUD_GROUP`              | -                   |
+| `--sakuracloud-auto-reboot`         | `SAKURACLOUD_AUTO_REBOOT`        | -                   |
+| `--sakuracloud-ignore-virtio-net`   | `SAKURACLOUD_IGNORE_VIRTIO_NET`  | -                   |
 
 
 ## Author

@@ -28,6 +28,9 @@ const (
 	defaultDiskSize            = 20480     // 20GB
 	defaultDiskName            = "disk001" // ディスク名
 	defaultDiskConnection      = "virtio"  // virtio
+	defaultGroup               = ""        // グループタグ
+	defaultAutoReboot          = false     // 自動再起動
+	defaultIgnoreVirtioNet     = false     // virtioNICの無効化
 )
 
 // Driver sakuracloud driver
@@ -53,6 +56,9 @@ type sakuraServerConfig struct {
 	DiskConnection      string
 	DiskSourceArchiveID string
 	Password            string
+	Group               string
+	AutoReboot          bool
+	IgnoreVirtioNet     bool
 }
 
 // GetCreateFlags create flags
@@ -148,6 +154,23 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "sakuracloud-password",
 			Usage:  "sakuracloud user password",
 		},
+
+		mcnflag.StringFlag{
+			EnvVar: "SAKURACLOUD_GROUP",
+			Name:   "sakuracloud-group",
+			Usage:  "sakuracloud @group tag [a/b/c/d]",
+			Value:  defaultGroup,
+		},
+		mcnflag.BoolFlag{
+			EnvVar: "SAKURACLOUD_AUTO_REBOOT",
+			Name:   "sakuracloud-auto-reboot",
+			Usage:  "sakuracloud @auto-reboot tag flag",
+		},
+		mcnflag.BoolFlag{
+			EnvVar: "SAKURACLOUD_IGNORE_VIRTIO_NET",
+			Name:   "sakuracloud-ignore-virtio-net",
+			Usage:  "sakuracloud ignore @virtio-net-pci tag flag",
+		},
 	}
 }
 
@@ -169,6 +192,9 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 			DiskPlan:            defaultDiskPlan,
 			DiskSize:            defaultDiskSize,
 			DiskName:            defaultDiskName,
+			Group:               defaultGroup,
+			AutoReboot:          defaultAutoReboot,
+			IgnoreVirtioNet:     defaultIgnoreVirtioNet,
 		},
 	}
 }
@@ -189,10 +215,6 @@ func validateSakuraServerConfig(c *sakuraServerConfig) error {
 
 	//ex. プランの存在確認や矛盾した設定の検出など
 	if c.ConnectedSwitch != "" && c.PrivateIP == "" {
-		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
-	}
-
-	if c.PrivateIPSubnetMask != "" && c.PrivateIP == "" {
 		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
 	}
 
@@ -234,6 +256,9 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		DiskName:            flags.String("sakuracloud-disk-name"),
 		DiskConnection:      flags.String("sakuracloud-disk-connection"),
 		DiskSourceArchiveID: flags.String("sakuracloud-disk-source-archive-id"),
+		Group:               flags.String("sakuracloud-group"),
+		AutoReboot:          flags.Bool("sakuracloud-auto-reboot"),
+		IgnoreVirtioNet:     flags.Bool("sakuracloud-ignore-virtio-net"),
 	}
 
 	if d.serverConfig.HostName == "" {
@@ -503,6 +528,17 @@ func (d *Driver) buildSakuraServerSpec() *sakura.Server {
 		network = []map[string]string{{"Scope": "shared"}}
 	}
 
+	var tags []string
+	if !d.serverConfig.IgnoreVirtioNet {
+		tags = append(tags, "@virtio-net-pci")
+	}
+	if d.serverConfig.Group != "" {
+		tags = append(tags, fmt.Sprintf("@group=%s", d.serverConfig.Group))
+	}
+	if d.serverConfig.AutoReboot {
+		tags = append(tags, "@auto-reboot")
+	}
+
 	serverPlan, _ := strconv.ParseInt(d.serverConfig.Plan, 10, 64)
 	spec := &sakura.Server{
 		Name:        d.serverConfig.HostName,
@@ -511,9 +547,7 @@ func (d *Driver) buildSakuraServerSpec() *sakura.Server {
 			ID: serverPlan,
 		},
 		ConnectedSwitches: network,
-		Tags: []string{
-			"@virtio-net-pci",
-		},
+		Tags:              tags[:],
 	}
 
 	log.Infof("Build host spec %#v", spec)
