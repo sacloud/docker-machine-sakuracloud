@@ -74,6 +74,8 @@ $ docker-machine create --driver=sakuracloud \
  - `--sakuracloud-group`: @group 特殊タグ
  - `--sakuracloud-auto-reboot`: @auto-reboot 特殊タグ
  - `--sakuracloud-ignore-virtio-net`: 順仮想化ドライバの無効化(@virtio-net-pci 特殊タグの無効化)
+ - `--sakuracloud-packet-filter`: パケットフィルタのID/名称 (eth0:共有セグメント用)
+ - `--sakuracloud-private-packet-filter`: パケットフィルタのID/名称 (eth1:プライベートセグメント用)
 
 
 `--sakuracloud-disk-size`はさくらのクラウドでサポートされるサイズのみ指定可能です。

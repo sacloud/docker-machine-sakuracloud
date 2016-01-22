@@ -2,16 +2,18 @@ package resources
 
 // SakuraCloudResources type of resources
 type SakuraCloudResources struct {
-	Server *Server `json:",omitempty"`
-	Disk   *Disk   `json:",omitempty"`
-	Note   *Note   `json:",omitempty"`
+	Server       *Server       `json:",omitempty"`
+	Disk         *Disk         `json:",omitempty"`
+	Note         *Note         `json:",omitempty"`
+	PacketFilter *PacketFilter `json:",omitempty"`
 }
 
 // SakuraCloudResourceList type of resources
 type SakuraCloudResourceList struct {
-	Servers  []Server  `json:",omitempty"`
-	Notes    []Note    `json:",omitempty"`
-	Archives []Archive `json:",omitempty"`
+	Servers       []Server       `json:",omitempty"`
+	Notes         []Note         `json:",omitempty"`
+	Archives      []Archive      `json:",omitempty"`
+	PacketFilters []PacketFilter `json:",omitempty"`
 }
 
 // Resource type of sakuracloud resource(have ID:string)
@@ -87,4 +89,14 @@ type Note struct {
 // Archive type of Public Archive
 type Archive struct {
 	*Resource
+}
+
+// PacketFilter type of PacketFilter
+type PacketFilter struct {
+	*Resource
+	Name                string
+	Description         string `json:",omitempty"`
+	RequiredHostVersion string `json:",omitempty"`
+	//	Expression          string `json:",omitempty"`
+	Notice string `json:",omitempty"`
 }

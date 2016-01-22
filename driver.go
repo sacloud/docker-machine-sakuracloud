@@ -31,6 +31,8 @@ const (
 	defaultGroup               = ""        // グループタグ
 	defaultAutoReboot          = false     // 自動再起動
 	defaultIgnoreVirtioNet     = false     // virtioNICの無効化
+	defaultPacketFilter        = ""
+	defaultPrivatePacketFilter = ""
 )
 
 // Driver sakuracloud driver
@@ -59,6 +61,8 @@ type sakuraServerConfig struct {
 	Group               string
 	AutoReboot          bool
 	IgnoreVirtioNet     bool
+	PacketFilter        string
+	PrivatePacketFilter string
 }
 
 // GetCreateFlags create flags
@@ -154,7 +158,6 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "sakuracloud-password",
 			Usage:  "sakuracloud user password",
 		},
-
 		mcnflag.StringFlag{
 			EnvVar: "SAKURACLOUD_GROUP",
 			Name:   "sakuracloud-group",
@@ -170,6 +173,18 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			EnvVar: "SAKURACLOUD_IGNORE_VIRTIO_NET",
 			Name:   "sakuracloud-ignore-virtio-net",
 			Usage:  "sakuracloud ignore @virtio-net-pci tag flag",
+		},
+		mcnflag.StringFlag{
+			EnvVar: "SAKURACLOUD_PACKET_FILTER",
+			Name:   "sakuracloud-packet-filter",
+			Usage:  "sakuracloud packet-filter for eth0(shared)[filter ID or NAME]",
+			Value:  defaultPacketFilter,
+		},
+		mcnflag.StringFlag{
+			EnvVar: "SAKURACLOUD_PRIVATE_PACKET_FILTER",
+			Name:   "sakuracloud-private-packet-filter",
+			Usage:  "sakuracloud packet-filter for eth1(private)[filter ID or NAME]",
+			Value:  defaultPacketFilter,
 		},
 	}
 }
@@ -195,6 +210,8 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 			Group:               defaultGroup,
 			AutoReboot:          defaultAutoReboot,
 			IgnoreVirtioNet:     defaultIgnoreVirtioNet,
+			PacketFilter:        defaultPacketFilter,
+			PrivatePacketFilter: defaultPrivatePacketFilter,
 		},
 	}
 }
@@ -221,6 +238,11 @@ func validateSakuraServerConfig(c *sakuraServerConfig) error {
 	if c.PrivateIPOnly && c.PrivateIP == "" {
 		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
 	}
+
+	if c.PrivatePacketFilter != "" && c.PrivateIP == "" {
+		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
+	}
+
 	return nil
 }
 
@@ -259,6 +281,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		Group:               flags.String("sakuracloud-group"),
 		AutoReboot:          flags.Bool("sakuracloud-auto-reboot"),
 		IgnoreVirtioNet:     flags.Bool("sakuracloud-ignore-virtio-net"),
+		PacketFilter:        flags.String("sakuracloud-packet-filter"),
+		PrivatePacketFilter: flags.String("sakuracloud-private-packet-filter"),
 	}
 
 	if d.serverConfig.HostName == "" {
@@ -355,10 +379,11 @@ func (d *Driver) Create() error {
 	}
 
 	//create server
-	id, err := d.getClient().Create(spec, d.serverConfig.PrivateIP)
+	serverResponse, err := d.getClient().Create(spec, d.serverConfig.PrivateIP)
 	if err != nil {
 		return fmt.Errorf("Error creating host: %v", err)
 	}
+	id := serverResponse.Server.ID
 	log.Infof("Created Server ID: %s", id)
 	d.ID = id
 
@@ -443,6 +468,24 @@ func (d *Driver) Create() error {
 	}
 	log.Infof("Editted Disk Id: %v", diskID)
 	d.waitForDiskAvailable()
+
+	//connect packet filter
+	if d.serverConfig.PacketFilter != "" {
+		log.Infof("Connecting Packet Filter(shared): %v", d.serverConfig.PacketFilter)
+		err := d.getClient().ConnectPacketFilterToSharedNIC(serverResponse.Server, d.serverConfig.PacketFilter)
+		if err != nil {
+			return fmt.Errorf("Error connecting PacketFilter(shared): %v", err)
+		}
+	}
+
+	if d.serverConfig.PrivatePacketFilter != "" {
+		log.Infof("Connecting Packet Filter(private): %v", d.serverConfig.PrivatePacketFilter)
+		err := d.getClient().ConnectPacketFilterToPrivateNIC(serverResponse.Server, d.serverConfig.PrivatePacketFilter)
+		if err != nil {
+			return fmt.Errorf("Error connecting PacketFilter(prvate): %v", err)
+		}
+
+	}
 
 	//start
 	err = d.getClient().PowerOn(id)
