@@ -188,10 +188,17 @@ func validateSakuraServerConfig(c *sakuraServerConfig) error {
 	//TODO さくら用設定のバリデーション
 
 	//ex. プランの存在確認や矛盾した設定の検出など
-	if c.ConnectedSwitch != "" && (c.PrivateIP == "" || c.PrivateIPSubnetMask == "") {
-		return fmt.Errorf("Missing Private IP or subnet --sakuracloud-private-ip/subnet-mask")
+	if c.ConnectedSwitch != "" && c.PrivateIP == "" {
+		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
 	}
 
+	if c.PrivateIPSubnetMask != "" && c.PrivateIP == "" {
+		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
+	}
+
+	if c.PrivateIPOnly && c.PrivateIP == "" {
+		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
+	}
 	return nil
 }
 
@@ -345,7 +352,7 @@ func (d *Driver) Create() error {
 	noteIDs = append(noteIDs, noteID)
 
 	var addIPNoteID = ""
-	if d.serverConfig.ConnectedSwitch != "" {
+	if d.serverConfig.PrivateIP != "" {
 		var err error
 		addIPNoteID, err = d.getClient().GetAddIPCustomizeNoteID(id, d.serverConfig.PrivateIP, d.serverConfig.PrivateIPSubnetMask)
 		if err != nil {
@@ -488,10 +495,12 @@ func (d *Driver) waitForDiskAvailable() {
 func (d *Driver) buildSakuraServerSpec() *sakura.Server {
 
 	var network []map[string]string
-	if d.serverConfig.ConnectedSwitch == "" {
-		network = []map[string]string{{"Scope": "shared"}}
-	} else {
+	if d.serverConfig.ConnectedSwitch != "" {
 		network = []map[string]string{{"Scope": "shared"}, {"ID": d.serverConfig.ConnectedSwitch}}
+	} else if d.serverConfig.PrivateIP != "" {
+		network = []map[string]string{{"Scope": "shared"}, nil}
+	} else {
+		network = []map[string]string{{"Scope": "shared"}}
 	}
 
 	serverPlan, _ := strconv.ParseInt(d.serverConfig.Plan, 10, 64)
