@@ -76,6 +76,7 @@ $ docker-machine create --driver=sakuracloud \
  - `--sakuracloud-ignore-virtio-net`: 順仮想化ドライバの無効化(@virtio-net-pci 特殊タグの無効化)
  - `--sakuracloud-packet-filter`: パケットフィルタのID/名称 (eth0:共有セグメント用)
  - `--sakuracloud-private-packet-filter`: パケットフィルタのID/名称 (eth1:プライベートセグメント用)
+ - `--sakuracloud-upgrade-kernel`: カーネルを3.19以降にアップグレードする(**overlayネットワークなどの利用時は必須**)
 
 
 `--sakuracloud-disk-size`はさくらのクラウドでサポートされるサイズのみ指定可能です。
@@ -114,6 +115,7 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-group`               | `SAKURACLOUD_GROUP`              | -                   |
 | `--sakuracloud-auto-reboot`         | `SAKURACLOUD_AUTO_REBOOT`        | -                   |
 | `--sakuracloud-ignore-virtio-net`   | `SAKURACLOUD_IGNORE_VIRTIO_NET`  | -                   |
+| `--sakuracloud-upgrade-kernel`   | `SAKURACLOUD_UPGRADE_KERNEL`  | -                   |
 
 
 ## Author

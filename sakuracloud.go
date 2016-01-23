@@ -16,7 +16,7 @@ const (
 	sakuraCloudAPIRoot                = "https://secure.sakura.ad.jp/cloud/zone"
 	sakuraCloudAPIRootSuffix          = "api/cloud/1.1"
 	sakuraCloudPublicImageSearchWords = "Ubuntu%20Server%2014%2064bit"
-	sakuraUbuntuSetupScriptBody       = `#!/bin/bash
+	sakuraAllowSudoScriptBody         = `#!/bin/bash
 
   # @sacloud-once
   # @sacloud-desc ubuntuユーザーがsudo出来るように/etc/sudoersを編集します
@@ -26,8 +26,20 @@ const (
 
   export DEBIAN_FRONTEND=noninteractive
 	echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || exit 1
+  exit 0`
+
+	sakuraAllowSudoWithKernelUpgradeScriptBody = `#!/bin/bash
+
+  # @sacloud-once
+  # @sacloud-desc ubuntuユーザーがsudo出来るように/etc/sudoersを編集 + Kernelアップグレード(linux-generic-lts-vivid) + 再起動
+  # @sacloud-desc （このスクリプトは、DebianもしくはUbuntuでのみ動作します）
+  # @sacloud-require-archive distro-debian
+  # @sacloud-require-archive distro-ubuntu
+
+  export DEBIAN_FRONTEND=noninteractive
+	echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || exit 1
   apt-get -y update || exit 1
-	apt-get install -y linux-image-3.19.0-47-generic linux-headers-3.19.0-47-generic linux-image-extra-3.19.0-47-generic || exit 1
+	apt-get install -y --install-recommends linux-generic-lts-vivid || exit 1
 	sh -c 'sleep 10; shutdown -h now' &
   exit 0`
 
@@ -370,14 +382,20 @@ func (c *Client) GetIP(id string, privateIPOnly bool) (string, error) {
 	return s.Server.Interfaces[0].IPAddress, nil
 }
 
-// GetUbuntuCustomizeNoteID get ubuntu customize note id
+// GetAllowSudoNoteID get ubuntu customize note id
 // FIXME
 // workaround for [Non root ssh create sudo can't get password](https://github.com/docker/machine/issues/1569)
 // [PR #1586](https://github.com/docker/machine/pull/1586)がマージされるまで暫定
 // スクリプト(Note)を使ってubuntuユーザがsudo可能にする
-func (c *Client) GetUbuntuCustomizeNoteID(serverID string) (string, error) {
+func (c *Client) GetAllowSudoNoteID(serverID string) (string, error) {
 	noteName := fmt.Sprintf("_99_%s_%d__", serverID, time.Now().UnixNano())
-	return c.getCustomizeNoteID(noteName, sakuraUbuntuSetupScriptBody)
+	return c.getCustomizeNoteID(noteName, sakuraAllowSudoScriptBody)
+}
+
+// GetAllowSudoWithKernelUpgradeNoteID get ubuntu customize note id
+func (c *Client) GetAllowSudoWithKernelUpgradeNoteID(serverID string) (string, error) {
+	noteName := fmt.Sprintf("_99_%s_%d__", serverID, time.Now().UnixNano())
+	return c.getCustomizeNoteID(noteName, sakuraAllowSudoWithKernelUpgradeScriptBody)
 }
 
 // GetAddIPCustomizeNoteID get add ip customize note id

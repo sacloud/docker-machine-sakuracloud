@@ -33,6 +33,7 @@ const (
 	defaultIgnoreVirtioNet     = false     // virtioNICの無効化
 	defaultPacketFilter        = ""
 	defaultPrivatePacketFilter = ""
+	defaultUpgradeKernel       = false
 )
 
 // Driver sakuracloud driver
@@ -63,6 +64,7 @@ type sakuraServerConfig struct {
 	IgnoreVirtioNet     bool
 	PacketFilter        string
 	PrivatePacketFilter string
+	UpgradeKernel       bool
 }
 
 // GetCreateFlags create flags
@@ -186,6 +188,11 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "sakuracloud packet-filter for eth1(private)[filter ID or NAME]",
 			Value:  defaultPacketFilter,
 		},
+		mcnflag.BoolFlag{
+			EnvVar: "SAKURACLOUD_UPGRADE_KERNEL",
+			Name:   "sakuracloud-upgrade-kernel",
+			Usage:  "sakuracloud upgrade kernel flag",
+		},
 	}
 }
 
@@ -212,6 +219,7 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 			IgnoreVirtioNet:     defaultIgnoreVirtioNet,
 			PacketFilter:        defaultPacketFilter,
 			PrivatePacketFilter: defaultPrivatePacketFilter,
+			UpgradeKernel:       defaultUpgradeKernel,
 		},
 	}
 }
@@ -283,6 +291,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		IgnoreVirtioNet:     flags.Bool("sakuracloud-ignore-virtio-net"),
 		PacketFilter:        flags.String("sakuracloud-packet-filter"),
 		PrivatePacketFilter: flags.String("sakuracloud-private-packet-filter"),
+		UpgradeKernel:       flags.Bool("sakuracloud-upgrade-kernel"),
 	}
 
 	if d.serverConfig.HostName == "" {
@@ -387,19 +396,23 @@ func (d *Driver) Create() error {
 	log.Infof("Created Server ID: %s", id)
 	d.ID = id
 
-	// FIXME
-	// workaround for [Non root ssh create sudo can't get password](https://github.com/docker/machine/issues/1569)
-	// [PR #1586](https://github.com/docker/machine/pull/1586)がマージされるまで暫定
-	// スクリプト(Note)を使ってubuntuユーザがsudo可能にする
-	//setup note(script)
-
 	var noteIDs []string
-	noteID, err := d.getClient().GetUbuntuCustomizeNoteID(id)
-	if err != nil || noteID == "" {
-		return fmt.Errorf("Error creating custom note: %v", err)
-	}
 
-	noteIDs = append(noteIDs, noteID)
+	if d.serverConfig.UpgradeKernel {
+		noteID, err := d.getClient().GetAllowSudoWithKernelUpgradeNoteID(id)
+		if err != nil || noteID == "" {
+			return fmt.Errorf("Error creating custom note: %v", err)
+		}
+		noteIDs = append(noteIDs, noteID)
+
+	} else {
+		noteID, err := d.getClient().GetAllowSudoNoteID(id)
+		if err != nil || noteID == "" {
+			return fmt.Errorf("Error creating custom note: %v", err)
+		}
+		noteIDs = append(noteIDs, noteID)
+
+	}
 
 	var addIPNoteID = ""
 	if d.serverConfig.PrivateIP != "" {
@@ -495,16 +508,19 @@ func (d *Driver) Create() error {
 	//wait for startup
 	d.waitForServerByState(state.Running)
 
-	//wait for applay startup script and shutdown
-	d.waitForServerByState(state.Stopped)
+	// wait for reboot (only upgradeKernel option is true)
+	if d.serverConfig.UpgradeKernel {
+		//wait for applay startup script and shutdown
+		d.waitForServerByState(state.Stopped)
 
-	//restart
-	err = d.getClient().PowerOn(id)
-	if err != nil {
-		return fmt.Errorf("Error starting server: %v", err)
+		//restart
+		err = d.getClient().PowerOn(id)
+		if err != nil {
+			return fmt.Errorf("Error starting server: %v", err)
+		}
+		//wait for startup
+		d.waitForServerByState(state.Running)
 	}
-	//wait for startup
-	d.waitForServerByState(state.Running)
 
 	//cleanup notes
 	for n := range noteIDs {

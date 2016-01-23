@@ -72,6 +72,7 @@ Options:
  - `--sakuracloud-ignore-virtio-net`: The flag of to not set @virtio-net-pci tag.
  - `--sakuracloud-packet-filter`: The Packet Filter ID or Name for eth0(shared).
  - `--sakuracloud-private-packet-filter`: The Packet Filter ID or Name for eth1(private).
+ - `--sakuracloud-upgrade-kernel`: The flag of upgrade kernel to 3.19+.
 
 
 Environment variables and default values:
@@ -96,6 +97,7 @@ Environment variables and default values:
 | `--sakuracloud-ignore-virtio-net`   | `SAKURACLOUD_IGNORE_VIRTIO_NET`  | -                   |
 | `--sakuracloud-packet-filter`   | `SAKURACLOUD_PACKET_FILTER`  | -                   |
 | `--sakuracloud-private-packet-filter`   | `SAKURACLOUD_PRIVATE_PACKET_FILTER`  | -                   |
+| `--sakuracloud-upgrade-kernel`   | `SAKURACLOUD_UPGRADE_KERNEL`  | -                   |
 
 
 ## Author
