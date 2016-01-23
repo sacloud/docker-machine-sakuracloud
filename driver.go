@@ -298,6 +298,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.serverConfig.HostName = d.GetMachineName()
 	}
 
+	if d.serverConfig.DiskName == defaultDiskName {
+		d.serverConfig.DiskName = d.GetMachineName()
+	}
+
 	if d.serverConfig.PrivateIPOnly {
 		d.IPAddress = d.serverConfig.PrivateIP
 	}
