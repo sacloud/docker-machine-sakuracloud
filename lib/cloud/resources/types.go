@@ -1,21 +1,5 @@
 package resources
 
-// SakuraCloudResources type of resources
-type SakuraCloudResources struct {
-	Server       *Server       `json:",omitempty"`
-	Disk         *Disk         `json:",omitempty"`
-	Note         *Note         `json:",omitempty"`
-	PacketFilter *PacketFilter `json:",omitempty"`
-}
-
-// SakuraCloudResourceList type of resources
-type SakuraCloudResourceList struct {
-	Servers       []Server       `json:",omitempty"`
-	Notes         []Note         `json:",omitempty"`
-	Archives      []Archive      `json:",omitempty"`
-	PacketFilters []PacketFilter `json:",omitempty"`
-}
-
 // Resource type of sakuracloud resource(have ID:string)
 type Resource struct {
 	ID string `json:",omitempty"`
@@ -26,14 +10,42 @@ type NumberResource struct {
 	ID int64 `json:",omitempty"`
 }
 
+// EAvailability Enum of sakuracloud
+type EAvailability struct {
+	Availability string `json:",omitempty"`
+}
+
+// IsAvailable Return availability
+func IsAvailable(a *EAvailability) bool {
+	return a.Availability == "available"
+}
+
+// SakuraCloudResources type of resources
+type SakuraCloudResources struct {
+	Server       *Server       `json:",omitempty"`
+	Disk         *Disk         `json:",omitempty"`
+	Note         *Note         `json:",omitempty"`
+	PacketFilter *PacketFilter `json:",omitempty"`
+	ServerPlan   *ServerPlan   `json:",omitempty"`
+}
+
+// SakuraCloudResourceList type of resources
+type SakuraCloudResourceList struct {
+	Servers       []Server       `json:",omitempty"`
+	Notes         []Note         `json:",omitempty"`
+	Archives      []Archive      `json:",omitempty"`
+	PacketFilters []PacketFilter `json:",omitempty"`
+	ServerPlans   []ServerPlan   `json:",omitempty"`
+}
+
 // Server type of create server request values
 type Server struct {
 	*Resource
 	Name              string
-	HostName          string         `json:",omitempty"`
-	Icon              NumberResource `json:",omitempty"`
-	Description       string         `json:",omitempty"`
-	ServerPlan        NumberResource
+	HostName          string              `json:",omitempty"`
+	Icon              NumberResource      `json:",omitempty"`
+	Description       string              `json:",omitempty"`
+	ServerPlan        NumberResource      `json:",omitempty"`
 	Tags              []string            `json:",omitempty"`
 	ConnectedSwitches []map[string]string `json:",omitempty"`
 	Disks             []Disk              `json:",omitempty"`
@@ -55,7 +67,7 @@ type Disk struct {
 	Connection     string   `json:",omitempty"`
 	SourceArchive  Resource `json:",omitempty"`
 	ReinstallCount int      `json:",omitempty"`
-	Availability   string
+	*EAvailability
 }
 
 // SSHKey type of sshkey
@@ -81,9 +93,9 @@ type Interface struct {
 // Note type of startup script
 type Note struct {
 	*Resource
-	Name         string
-	Content      string
-	Availability string `json:",omitempty"`
+	Name    string
+	Content string
+	*EAvailability
 }
 
 // Archive type of Public Archive
@@ -99,4 +111,15 @@ type PacketFilter struct {
 	RequiredHostVersion string `json:",omitempty"`
 	//	Expression          string `json:",omitempty"`
 	Notice string `json:",omitempty"`
+}
+
+// ServerPlan type of ServerPlan
+type ServerPlan struct {
+	*NumberResource
+	Name         string `json:",omitempty"`
+	Description  string `json:",omitempty"`
+	CPU          int    `json:",omitempty"`
+	MemoryMB     int    `json:",omitempty"`
+	ServiceClass string `json:",omitempty"`
+	*EAvailability
 }

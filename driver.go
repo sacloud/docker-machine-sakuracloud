@@ -18,7 +18,8 @@ import (
 
 const (
 	defaultRegion              = "is1a" // 石狩第１ゾーン
-	defaultPlan                = "1001" //TODO プラン名称から設定できるようにする? or コアとメモリを個別に指定できるようにする?
+	defaultCore                = 1      //デフォルトコア数
+	defaultMemorySize          = 1      // デフォルトメモリサイズ
 	defaultConnectedSwitch     = ""     // 追加で接続するSwitchのID
 	defaultPrivateIPOnly       = false
 	defaultPrivateIP           = ""              // 追加で接続するSwitch用NICのIP
@@ -47,7 +48,8 @@ type Driver struct {
 
 type sakuraServerConfig struct {
 	HostName            string
-	Plan                string
+	Core                int
+	MemorySize          int
 	ConnectedSwitch     string
 	PrivateIPOnly       bool
 	PrivateIP           string
@@ -65,6 +67,11 @@ type sakuraServerConfig struct {
 	PacketFilter        string
 	PrivatePacketFilter string
 	UpgradeKernel       bool
+}
+
+func (c *sakuraServerConfig) getPlanID() int64 {
+	planID, _ := strconv.ParseInt(fmt.Sprintf("%d%03d", c.MemorySize, c.Core), 10, 64)
+	return planID
 }
 
 // GetCreateFlags create flags
@@ -91,11 +98,17 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Name:   "sakuracloud-host-name",
 			Usage:  "sakuracloud host name",
 		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_PLAN",
-			Name:   "sakuracloud-plan",
-			Usage:  "sakuracloud plan id [memory(GB) & core(NNN)]",
-			Value:  defaultPlan,
+		mcnflag.IntFlag{
+			EnvVar: "SAKURACLOUD_CORE",
+			Name:   "sakuracloud-core",
+			Usage:  "sakuracloud number of CPU core",
+			Value:  defaultCore,
+		},
+		mcnflag.IntFlag{
+			EnvVar: "SAKURACLOUD_MEMORY_SIZE",
+			Name:   "sakuracloud-memory-size",
+			Usage:  "sakuracloud memory size(GB)",
+			Value:  defaultMemorySize,
 		},
 		mcnflag.StringFlag{
 			EnvVar: "SAKURACLOUD_CONNECTED_SWITCH",
@@ -205,7 +218,8 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 		},
 		Client: &Client{},
 		serverConfig: &sakuraServerConfig{
-			Plan:                defaultPlan,
+			Core:                defaultCore,
+			MemorySize:          defaultMemorySize,
 			PrivateIPOnly:       defaultPrivateIPOnly,
 			ConnectedSwitch:     defaultConnectedSwitch,
 			PrivateIP:           defaultPrivateIP,
@@ -235,20 +249,25 @@ func validateClientConfig(c *Client) error {
 	return nil
 }
 
-func validateSakuraServerConfig(c *sakuraServerConfig) error {
-	//TODO さくら用設定のバリデーション
+func validateSakuraServerConfig(c *Client, config *sakuraServerConfig) error {
+	//さくら用設定のバリデーション
 
 	//ex. プランの存在確認や矛盾した設定の検出など
-	if c.ConnectedSwitch != "" && c.PrivateIP == "" {
+	if config.ConnectedSwitch != "" && config.PrivateIP == "" {
 		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
 	}
 
-	if c.PrivateIPOnly && c.PrivateIP == "" {
+	if config.PrivateIPOnly && config.PrivateIP == "" {
 		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
 	}
 
-	if c.PrivatePacketFilter != "" && c.PrivateIP == "" {
+	if config.PrivatePacketFilter != "" && config.PrivateIP == "" {
 		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
+	}
+
+	res, err := c.IsValidPlan(config.Core, config.MemorySize)
+	if !res || err != nil {
+		return fmt.Errorf("Invalid Parameter: core or memory is invalid : %v", err)
 	}
 
 	return nil
@@ -275,7 +294,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	d.serverConfig = &sakuraServerConfig{
 		HostName:            flags.String("sakuracloud-host-name"),
-		Plan:                flags.String("sakuracloud-plan"),
+		Core:                flags.Int("sakuracloud-core"),
+		MemorySize:          flags.Int("sakuracloud-memory-size"),
 		ConnectedSwitch:     flags.String("sakuracloud-connected-switch"),
 		PrivateIP:           flags.String("sakuracloud-private-ip"),
 		PrivateIPSubnetMask: flags.String("sakuracloud-private-ip-subnet-mask"),
@@ -314,7 +334,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		d.serverConfig.DiskSourceArchiveID = archiveID
 	}
 
-	return validateSakuraServerConfig(d.serverConfig)
+	return validateSakuraServerConfig(d.Client, d.serverConfig)
 }
 
 func (d *Driver) getClient() *Client {
@@ -602,12 +622,11 @@ func (d *Driver) buildSakuraServerSpec() *sakura.Server {
 		tags = append(tags, "@auto-reboot")
 	}
 
-	serverPlan, _ := strconv.ParseInt(d.serverConfig.Plan, 10, 64)
 	spec := &sakura.Server{
 		Name:        d.serverConfig.HostName,
 		Description: "",
 		ServerPlan: sakura.NumberResource{
-			ID: serverPlan,
+			ID: d.serverConfig.getPlanID(),
 		},
 		ConnectedSwitches: network,
 		Tags:              tags[:],

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -124,10 +125,6 @@ func (c *Client) isOkStatus(code int) bool {
 		503: false,
 	}
 	return codes[code]
-}
-
-func (c *Client) isReadyDiskStatus(state string) bool {
-	return state == "available"
 }
 
 func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error) {
@@ -611,5 +608,38 @@ func (c *Client) GetUbuntuArchiveID() (string, error) {
 	}
 
 	return "", errors.New("Archive'Ubuntu Server 14.04 LTS 64bit' not found.")
+}
+
+// IsValidPlan return valid plan
+func (c *Client) IsValidPlan(core int, memGB int) (bool, error) {
+	//assert args
+	if core <= 0 {
+		return false, fmt.Errorf("Invalid Parameter: CPU Core")
+	}
+	if memGB <= 0 {
+		return false, fmt.Errorf("Invalid Parameter: Memory Size(GB)")
+	}
+
+	planID, _ := strconv.ParseInt(fmt.Sprintf("%d%03d", memGB, core), 10, 64)
+
+	var (
+		method = "GET"
+		uri    = fmt.Sprintf("product/server/%d", planID)
+	)
+
+	data, err := c.newRequest(method, uri, nil)
+	if err != nil {
+		return false, err
+	}
+	var plan sakura.Response
+	if err := json.Unmarshal(data, &plan); err != nil {
+		return false, err
+	}
+
+	if plan.ServerPlan != nil {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("Server Plan[%d] Not Found", planID)
 
 }

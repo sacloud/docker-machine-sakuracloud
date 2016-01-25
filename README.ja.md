@@ -60,6 +60,8 @@ $ docker-machine create --driver=sakuracloud \
 
  - `--sakuracloud-access-token`: **必須** アクセストークン
  - `--sakuracloud-access-token-secret`: **必須** アクセストークンシークレット
+ - `--sakuracloud-core`: CPUコア数
+ - `--sakuracloud-memory-size`: メモリサイズ(GB単位).
  - `--sakuracloud-connected-switch`: 接続するスイッチ or ルーターのID(eth1)
  - `--sakuracloud-private-ip-only`: 公開セグメントのNICを無効にしeth1のみを使う
  - `--sakuracloud-private-ip`: eth1のIPアドレス
@@ -69,8 +71,7 @@ $ docker-machine create --driver=sakuracloud \
  - `--sakuracloud-disk-name`: さくらのクラウド上に作成するディスクの名前
  - `--sakuracloud-disk-plan`: ディスクプラン (HDD:`2` or SSD:`4`)
  - `--sakuracloud-disk-size`: ディスクサイズ(MB単位)
- - `--sakuracloud-plan`: サーバプラン
- - `--sakuracloud-region`: リージョン名
+ - `--sakuracloud-region`: リージョン名[is1a / is1b / tk1a]
  - `--sakuracloud-group`: @group 特殊タグ
  - `--sakuracloud-auto-reboot`: @auto-reboot 特殊タグ
  - `--sakuracloud-ignore-virtio-net`: 順仮想化ドライバの無効化(@virtio-net-pci 特殊タグの無効化)
@@ -101,6 +102,8 @@ Sandboxリージョンについては外部からログインができないた�
 |-------------------------------------|-----------------------------------|--------------------------|
 | `--sakuracloud-access-token`        | `SAKURACLOUD_ACCESS_TOKEN`        | -                        |
 | `--sakuracloud-access-token-secret` | `SAKURACLOUD_ACCESS_TOKEN_SECRET` | -                        |
+| `--sakuracloud-core`                | `SAKURACLOUD_CORE`                | `1`                   |
+| `--sakuracloud-memory-size`         | `SAKURACLOUD_MEMORY_SIZE`         | `1`                   |
 | `--sakuracloud-connected-switch`    | `SAKURACLOUD_CONNECTED_SWITCH`     | -                 |
 | `--sakuracloud-private-ip-only`       | `SAKURACLOUD_PRIVATE_IP_ONLY`     | -                 |
 | `--sakuracloud-private-ip`       | `SAKURACLOUD_PRIVATE_IP`     | -                 |
@@ -110,7 +113,6 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-disk-name`           | `SAKURACLOUD_DISK_NAME`           | `disk001`                |
 | `--sakuracloud-disk-plan`           | `SAKURACLOUD_DISK_PLAN`           | `4`                      |
 | `--sakuracloud-disk-size`           | `SAKURACLOUD_DISK_SIZE`           | `20480`                  |
-| `--sakuracloud-plan`                | `SAKURACLOUD_PLAN`                | `1001`                   |
 | `--sakuracloud-region`              | `SAKURACLOUD_REGION`              | `is1a`                   |
 | `--sakuracloud-group`               | `SAKURACLOUD_GROUP`              | -                   |
 | `--sakuracloud-auto-reboot`         | `SAKURACLOUD_AUTO_REBOOT`        | -                   |
