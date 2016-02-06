@@ -77,9 +77,10 @@ type SSHKey struct {
 
 // DiskEditValue type of disk edit request value
 type DiskEditValue struct {
-	Password string
-	SSHKey   SSHKey
-	Notes    []Resource
+	Password      string
+	SSHKey        SSHKey
+	DisablePWAuth bool
+	Notes         []Resource
 }
 
 // Interface type of server nic

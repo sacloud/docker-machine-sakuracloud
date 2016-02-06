@@ -1,4 +1,4 @@
-package sakuracloud
+package driver
 
 import (
 	"crypto/rand"
@@ -13,200 +13,24 @@ import (
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/api"
+	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cli"
 	sakura "github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cloud/resources"
-)
-
-const (
-	defaultRegion              = "is1a" // 石狩第１ゾーン
-	defaultCore                = 1      //デフォルトコア数
-	defaultMemorySize          = 1      // デフォルトメモリサイズ
-	defaultConnectedSwitch     = ""     // 追加で接続するSwitchのID
-	defaultPrivateIPOnly       = false
-	defaultPrivateIP           = ""              // 追加で接続するSwitch用NICのIP
-	defaultPrivateIPSubnetMask = "255.255.255.0" // 追加で接続するSwitch用NICのIP
-	defaultGateway             = ""
-	defaultDiskPlan            = "4"       // SSD
-	defaultDiskSize            = 20480     // 20GB
-	defaultDiskName            = "disk001" // ディスク名
-	defaultDiskConnection      = "virtio"  // virtio
-	defaultGroup               = ""        // グループタグ
-	defaultAutoReboot          = false     // 自動再起動
-	defaultIgnoreVirtioNet     = false     // virtioNICの無効化
-	defaultPacketFilter        = ""
-	defaultPrivatePacketFilter = ""
-	defaultUpgradeKernel       = false
+	"github.com/yamamoto-febc/docker-machine-sakuracloud/spec"
 )
 
 // Driver sakuracloud driver
 type Driver struct {
 	*drivers.BaseDriver
-	serverConfig *sakuraServerConfig
-	Client       *Client
+	serverConfig *spec.SakuraServerConfig
+	Client       *api.Client
 	ID           string
-	DiskID       string
-}
-
-type sakuraServerConfig struct {
-	HostName            string
-	Core                int
-	MemorySize          int
-	ConnectedSwitch     string
-	PrivateIPOnly       bool
-	PrivateIP           string
-	PrivateIPSubnetMask string
-	Gateway             string
-	DiskPlan            string
-	DiskSize            int
-	DiskName            string
-	DiskConnection      string
-	DiskSourceArchiveID string
-	Password            string
-	Group               string
-	AutoReboot          bool
-	IgnoreVirtioNet     bool
-	PacketFilter        string
-	PrivatePacketFilter string
-	UpgradeKernel       bool
-}
-
-func (c *sakuraServerConfig) getPlanID() int64 {
-	planID, _ := strconv.ParseInt(fmt.Sprintf("%d%03d", c.MemorySize, c.Core), 10, 64)
-	return planID
+	diskID       string
 }
 
 // GetCreateFlags create flags
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
-	return []mcnflag.Flag{
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_ACCESS_TOKEN",
-			Name:   "sakuracloud-access-token",
-			Usage:  "sakuracloud access token",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_ACCESS_TOKEN_SECRET",
-			Name:   "sakuracloud-access-token-secret",
-			Usage:  "sakuracloud access token secret",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_REGION",
-			Name:   "sakuracloud-region",
-			Usage:  "sakuracloud region name[tk1a/is1a/is1b/tk1v]",
-			Value:  defaultRegion,
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_HOST_NAME",
-			Name:   "sakuracloud-host-name",
-			Usage:  "sakuracloud host name",
-		},
-		mcnflag.IntFlag{
-			EnvVar: "SAKURACLOUD_CORE",
-			Name:   "sakuracloud-core",
-			Usage:  "sakuracloud number of CPU core",
-			Value:  defaultCore,
-		},
-		mcnflag.IntFlag{
-			EnvVar: "SAKURACLOUD_MEMORY_SIZE",
-			Name:   "sakuracloud-memory-size",
-			Usage:  "sakuracloud memory size(GB)",
-			Value:  defaultMemorySize,
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_CONNECTED_SWITCH",
-			Name:   "sakuracloud-connected-switch",
-			Usage:  "sakuracloud connected switch['switch ID']",
-			Value:  defaultConnectedSwitch,
-		},
-		mcnflag.BoolFlag{
-			EnvVar: "SAKURACLOUD_PRIVATE_IP_ONLY",
-			Name:   "sakuracloud-private-ip-only",
-			Usage:  "sakuracloud private ip only flag",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_PRIVATE_IP",
-			Name:   "sakuracloud-private-ip",
-			Usage:  "sakuracloud private ip['xxx.xxx.xxx.xxx']",
-			Value:  defaultPrivateIP,
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_PRIVATE_IP_SUBNET_MASK",
-			Name:   "sakuracloud-private-ip-subnet-mask",
-			Usage:  "sakuracloud private ip subnetmask['255.255.255.0']",
-			Value:  defaultPrivateIPSubnetMask,
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_GATEWAY",
-			Name:   "sakuracloud-gateway",
-			Usage:  "sakuracloud default gateway ip address",
-			Value:  defaultGateway,
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_DISK_PLAN",
-			Name:   "sakuracloud-disk-plan",
-			Usage:  "sakuracloud disk plan[HDD(2)/SSD(4)]",
-			Value:  defaultDiskPlan,
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_DISK_NAME",
-			Name:   "sakuracloud-disk-name",
-			Usage:  "sakuracloud disk name",
-			Value:  defaultDiskName,
-		},
-		mcnflag.IntFlag{
-			EnvVar: "SAKURACLOUD_DISK_SIZE",
-			Name:   "sakuracloud-disk-size",
-			Usage:  "sakuracloud disk size(MB)[20480,102400,256000,512000]",
-			Value:  defaultDiskSize,
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_DISK_CONNECTION",
-			Name:   "sakuracloud-disk-connection",
-			Usage:  "sakuracloud disk connection[virtio/ide]",
-			Value:  defaultDiskConnection,
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_DISK_SOURCE_ARCHIVE_ID",
-			Name:   "sakuracloud-disk-source-archive-id",
-			Usage:  "sakuracloud disk source archive id",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_PASSWORD",
-			Name:   "sakuracloud-password",
-			Usage:  "sakuracloud user password",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_GROUP",
-			Name:   "sakuracloud-group",
-			Usage:  "sakuracloud @group tag [a/b/c/d]",
-			Value:  defaultGroup,
-		},
-		mcnflag.BoolFlag{
-			EnvVar: "SAKURACLOUD_AUTO_REBOOT",
-			Name:   "sakuracloud-auto-reboot",
-			Usage:  "sakuracloud @auto-reboot tag flag",
-		},
-		mcnflag.BoolFlag{
-			EnvVar: "SAKURACLOUD_IGNORE_VIRTIO_NET",
-			Name:   "sakuracloud-ignore-virtio-net",
-			Usage:  "sakuracloud ignore @virtio-net-pci tag flag",
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_PACKET_FILTER",
-			Name:   "sakuracloud-packet-filter",
-			Usage:  "sakuracloud packet-filter for eth0(shared)[filter ID or NAME]",
-			Value:  defaultPacketFilter,
-		},
-		mcnflag.StringFlag{
-			EnvVar: "SAKURACLOUD_PRIVATE_PACKET_FILTER",
-			Name:   "sakuracloud-private-packet-filter",
-			Usage:  "sakuracloud packet-filter for eth1(private)[filter ID or NAME]",
-			Value:  defaultPacketFilter,
-		},
-		mcnflag.BoolFlag{
-			EnvVar: "SAKURACLOUD_UPGRADE_KERNEL",
-			Name:   "sakuracloud-upgrade-kernel",
-			Usage:  "sakuracloud upgrade kernel flag",
-		},
-	}
+	return spec.Options.McnFlags()
 }
 
 // NewDriver create driver instance
@@ -216,29 +40,12 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
-		Client: &Client{},
-		serverConfig: &sakuraServerConfig{
-			Core:                defaultCore,
-			MemorySize:          defaultMemorySize,
-			PrivateIPOnly:       defaultPrivateIPOnly,
-			ConnectedSwitch:     defaultConnectedSwitch,
-			PrivateIP:           defaultPrivateIP,
-			PrivateIPSubnetMask: defaultPrivateIPSubnetMask,
-			Gateway:             defaultGateway,
-			DiskPlan:            defaultDiskPlan,
-			DiskSize:            defaultDiskSize,
-			DiskName:            defaultDiskName,
-			Group:               defaultGroup,
-			AutoReboot:          defaultAutoReboot,
-			IgnoreVirtioNet:     defaultIgnoreVirtioNet,
-			PacketFilter:        defaultPacketFilter,
-			PrivatePacketFilter: defaultPrivatePacketFilter,
-			UpgradeKernel:       defaultUpgradeKernel,
-		},
+		Client:       &api.Client{},
+		serverConfig: spec.DefaultServerConfig,
 	}
 }
 
-func validateClientConfig(c *Client) error {
+func validateClientConfig(c *api.Client) error {
 	if c.AccessToken == "" {
 		return fmt.Errorf("Missing required setting - --sakuracloud-access-token")
 	}
@@ -249,7 +56,7 @@ func validateClientConfig(c *Client) error {
 	return nil
 }
 
-func validateSakuraServerConfig(c *Client, config *sakuraServerConfig) error {
+func validateSakuraServerConfig(c *api.Client, config *spec.SakuraServerConfig) error {
 	//さくら用設定のバリデーション
 
 	//ex. プランの存在確認や矛盾した設定の検出など
@@ -274,13 +81,15 @@ func validateSakuraServerConfig(c *Client, config *sakuraServerConfig) error {
 }
 
 // SetConfigFromFlags create config values from flags
-func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
+func (d *Driver) SetConfigFromFlags(srcFlags drivers.DriverOptions) error {
+	cliClient := cli.NewClient()
+	flags := cliClient.GetDriverOptions(srcFlags)
 
-	d.Client = &Client{
-		Region:            flags.String("sakuracloud-region"),
-		AccessToken:       flags.String("sakuracloud-access-token"),
-		AccessTokenSecret: flags.String("sakuracloud-access-token-secret"),
-	}
+	d.Client = api.NewClient(
+		flags.String("sakuracloud-access-token"),
+		flags.String("sakuracloud-access-token-secret"),
+		flags.String("sakuracloud-region"),
+	)
 
 	d.SwarmMaster = flags.Bool("swarm-master")
 	d.SwarmHost = flags.String("swarm-host")
@@ -292,8 +101,8 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		return err
 	}
 
-	d.serverConfig = &sakuraServerConfig{
-		HostName:            flags.String("sakuracloud-host-name"),
+	d.serverConfig = &spec.SakuraServerConfig{
+		HostName:            "",
 		Core:                flags.Int("sakuracloud-core"),
 		MemorySize:          flags.Int("sakuracloud-memory-size"),
 		ConnectedSwitch:     flags.String("sakuracloud-connected-switch"),
@@ -305,20 +114,19 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		DiskSize:            flags.Int("sakuracloud-disk-size"),
 		DiskName:            flags.String("sakuracloud-disk-name"),
 		DiskConnection:      flags.String("sakuracloud-disk-connection"),
-		DiskSourceArchiveID: flags.String("sakuracloud-disk-source-archive-id"),
 		Group:               flags.String("sakuracloud-group"),
 		AutoReboot:          flags.Bool("sakuracloud-auto-reboot"),
 		IgnoreVirtioNet:     flags.Bool("sakuracloud-ignore-virtio-net"),
 		PacketFilter:        flags.String("sakuracloud-packet-filter"),
 		PrivatePacketFilter: flags.String("sakuracloud-private-packet-filter"),
-		UpgradeKernel:       flags.Bool("sakuracloud-upgrade-kernel"),
+		EnablePWAuth:        flags.Bool("sakuracloud-enable-password-auth"),
 	}
 
 	if d.serverConfig.HostName == "" {
 		d.serverConfig.HostName = d.GetMachineName()
 	}
 
-	if d.serverConfig.DiskName == defaultDiskName {
+	if d.serverConfig.IsDiskNameDefault() {
 		d.serverConfig.DiskName = d.GetMachineName()
 	}
 
@@ -337,7 +145,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	return validateSakuraServerConfig(d.Client, d.serverConfig)
 }
 
-func (d *Driver) getClient() *Client {
+func (d *Driver) getClient() *api.Client {
 	return d.Client
 }
 
@@ -422,21 +230,11 @@ func (d *Driver) Create() error {
 
 	var noteIDs []string
 
-	if d.serverConfig.UpgradeKernel {
-		noteID, err := d.getClient().GetAllowSudoWithKernelUpgradeNoteID(id)
-		if err != nil || noteID == "" {
-			return fmt.Errorf("Error creating custom note: %v", err)
-		}
-		noteIDs = append(noteIDs, noteID)
-
-	} else {
-		noteID, err := d.getClient().GetAllowSudoNoteID(id)
-		if err != nil || noteID == "" {
-			return fmt.Errorf("Error creating custom note: %v", err)
-		}
-		noteIDs = append(noteIDs, noteID)
-
+	noteID, err := d.getClient().GetAllowSudoNoteID(id)
+	if err != nil || noteID == "" {
+		return fmt.Errorf("Error creating custom note: %v", err)
 	}
+	noteIDs = append(noteIDs, noteID)
 
 	var addIPNoteID = ""
 	if d.serverConfig.PrivateIP != "" {
@@ -486,7 +284,7 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Error creating disk: %v", err)
 	}
 	log.Infof("Created Disk ID: %v", diskID)
-	d.DiskID = diskID
+	d.diskID = diskID
 
 	//wait for disk available
 	d.waitForDiskAvailable()
@@ -585,7 +383,7 @@ func (d *Driver) waitForServerByState(waitForState state.State) {
 func (d *Driver) waitForDiskAvailable() {
 	log.Infof("Waiting for disk to become available")
 	for {
-		s, err := d.getClient().DiskState(d.DiskID)
+		s, err := d.getClient().DiskState(d.diskID)
 		if err != nil {
 			log.Debugf("Failed to get DiskState - %+v", err)
 			continue
@@ -626,7 +424,7 @@ func (d *Driver) buildSakuraServerSpec() *sakura.Server {
 		Name:        d.serverConfig.HostName,
 		Description: "",
 		ServerPlan: sakura.NumberResource{
-			ID: d.serverConfig.getPlanID(),
+			ID: d.serverConfig.GetPlanID(),
 		},
 		ConnectedSwitches: network,
 		Tags:              tags[:],
@@ -664,7 +462,8 @@ func (d *Driver) buildSakuraDiskEditSpec(publicKey string, noteIDs []string) *sa
 		SSHKey: sakura.SSHKey{
 			PublicKey: publicKey,
 		},
-		Notes: notes[:],
+		DisablePWAuth: !d.serverConfig.EnablePWAuth,
+		Notes:         notes[:],
 	}
 	log.Infof("Build disk edit spec %#v", spec)
 	return spec
@@ -703,7 +502,7 @@ func (d *Driver) Remove() error {
 		d.waitForServerByState(state.Stopped)
 	}
 
-	err = d.getClient().Delete(d.ID, []string{d.DiskID})
+	err = d.getClient().Delete(d.ID, []string{d.diskID})
 	if err != nil {
 		log.Errorf("Error deleting server: %v", err)
 	} else {

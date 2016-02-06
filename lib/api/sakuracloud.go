@@ -1,4 +1,4 @@
-package sakuracloud
+package api
 
 import (
 	"bytes"
@@ -27,21 +27,6 @@ const (
 
   export DEBIAN_FRONTEND=noninteractive
 	echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || exit 1
-	sh -c 'sleep 10; shutdown -h now' &
-  exit 0`
-
-	sakuraAllowSudoWithKernelUpgradeScriptBody = `#!/bin/bash
-
-  # @sacloud-once
-  # @sacloud-desc ubuntuユーザーがsudo出来るように/etc/sudoersを編集 + Kernelアップグレード(linux-generic-lts-vivid) + 再起動
-  # @sacloud-desc （このスクリプトは、DebianもしくはUbuntuでのみ動作します）
-  # @sacloud-require-archive distro-debian
-  # @sacloud-require-archive distro-ubuntu
-
-  export DEBIAN_FRONTEND=noninteractive
-	echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || exit 1
-  apt-get -y update || exit 1
-	apt-get install -y --install-recommends linux-generic-lts-vivid || exit 1
 	sh -c 'sleep 10; shutdown -h now' &
   exit 0`
 
@@ -388,12 +373,6 @@ func (c *Client) GetIP(id string, privateIPOnly bool) (string, error) {
 func (c *Client) GetAllowSudoNoteID(serverID string) (string, error) {
 	noteName := fmt.Sprintf("_99_%s_%d__", serverID, time.Now().UnixNano())
 	return c.getCustomizeNoteID(noteName, sakuraAllowSudoScriptBody)
-}
-
-// GetAllowSudoWithKernelUpgradeNoteID get ubuntu customize note id
-func (c *Client) GetAllowSudoWithKernelUpgradeNoteID(serverID string) (string, error) {
-	noteName := fmt.Sprintf("_99_%s_%d__", serverID, time.Now().UnixNano())
-	return c.getCustomizeNoteID(noteName, sakuraAllowSudoWithKernelUpgradeScriptBody)
 }
 
 // GetAddIPCustomizeNoteID get add ip customize note id

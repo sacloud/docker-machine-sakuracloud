@@ -4,7 +4,11 @@
 	"Packages": [
 		"github.com/yamamoto-febc/docker-machine-sakuracloud",
 		"github.com/yamamoto-febc/docker-machine-sakuracloud/cmd",
+		"github.com/yamamoto-febc/docker-machine-sakuracloud/commands",
+		"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cli",
 		"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cloud/resources",
+		"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/option",
+		"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/persist",
 		"github.com/yamamoto-febc/docker-machine-sakuracloud/version"
 	],
 	"Deps": [
@@ -59,12 +63,17 @@
 			"Rev": "e27fb87286cb8e7454183ce46a6e1e84b31965e9"
 		},
 		{
-			"ImportPath": "github.com/stretchr/testify/assert",
-			"Rev": "e4ec8152c15fc46bd5056ce65997a07c7d415325"
+			"ImportPath": "github.com/mattn/go-runewidth",
+			"Comment": "travisish-44-ge882a96",
+			"Rev": "e882a96ec18dd43fa283187b66af74497c9101c0"
 		},
 		{
-			"ImportPath": "golang.org/x/crypto/curve25519",
-			"Rev": "1fbbd62cfec66bd39d91e97749579579d4d3037e"
+			"ImportPath": "github.com/olekukonko/tablewriter",
+			"Rev": "cca8bbc0798408af109aaaa239cbd2634846b340"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Rev": "e4ec8152c15fc46bd5056ce65997a07c7d415325"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",
