@@ -533,18 +533,18 @@ func (d *Driver) Create() error {
 	d.waitForServerByState(state.Running)
 
 	// wait for reboot (only upgradeKernel option is true)
-	if d.serverConfig.UpgradeKernel {
-		//wait for applay startup script and shutdown
-		d.waitForServerByState(state.Stopped)
+	//if d.serverConfig.UpgradeKernel {
+	//wait for applay startup script and shutdown
+	d.waitForServerByState(state.Stopped)
 
-		//restart
-		err = d.getClient().PowerOn(id)
-		if err != nil {
-			return fmt.Errorf("Error starting server: %v", err)
-		}
-		//wait for startup
-		d.waitForServerByState(state.Running)
+	//restart
+	err = d.getClient().PowerOn(id)
+	if err != nil {
+		return fmt.Errorf("Error starting server: %v", err)
 	}
+	//wait for startup
+	d.waitForServerByState(state.Running)
+	//}
 
 	//cleanup notes
 	for n := range noteIDs {

@@ -27,6 +27,7 @@ const (
 
   export DEBIAN_FRONTEND=noninteractive
 	echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || exit 1
+	sh -c 'sleep 10; shutdown -h now' &
   exit 0`
 
 	sakuraAllowSudoWithKernelUpgradeScriptBody = `#!/bin/bash
