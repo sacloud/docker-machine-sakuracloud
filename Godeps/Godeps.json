@@ -36,6 +36,11 @@
 			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
 		},
 		{
+			"ImportPath": "github.com/docker/machine/libmachine/engine",
+			"Comment": "v0.6.0-rc4-177-g5b9663f",
+			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
+		},
+		{
 			"ImportPath": "github.com/docker/machine/libmachine/log",
 			"Comment": "v0.6.0-rc4-177-g5b9663f",
 			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
