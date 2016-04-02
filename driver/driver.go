@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -31,6 +32,7 @@ type Driver struct {
 	diskID       string
 	EnginePort   int
 	SSHKey       string
+	DNSZone      string
 }
 
 // GetCreateFlags create flags
@@ -48,6 +50,7 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 		Client:       &api.Client{},
 		serverConfig: spec.DefaultServerConfig,
 		EnginePort:   spec.DefaultServerConfig.EnginePort,
+		DNSZone:      spec.DefaultServerConfig.DNSZone,
 	}
 }
 
@@ -150,6 +153,7 @@ func (d *Driver) SetConfigFromFlags(srcFlags drivers.DriverOptions) error {
 	}
 
 	d.EnginePort = flags.Int("sakuracloud-engine-port")
+	d.DNSZone = flags.String("sakuracloud-dns-zone")
 
 	return validateSakuraServerConfig(d.Client, d.serverConfig)
 }
@@ -370,6 +374,19 @@ func (d *Driver) Create() error {
 
 	}
 
+	if d.DNSZone != "" {
+		log.Infof("Setting SakuraCloud DNS: %v", d.DNSZone)
+		ip, _ := d.GetIP()
+		ns, err := d.getClient().SetupDnsRecord(d.DNSZone, d.GetMachineName(), ip)
+		if err != nil {
+			return fmt.Errorf("Error setting SakuraCloud DNS: %v", err)
+		}
+
+		if ns != nil {
+			log.Infof("Added DNS Zone,Please Set Whois NameServer to [%s]", strings.Join(ns, ","))
+		}
+	}
+
 	//start
 	err = d.getClient().PowerOn(id)
 	if err != nil {
@@ -478,7 +495,7 @@ func (d *Driver) buildSakuraServerSpec() *sakura.Server {
 		Tags:              tags[:],
 	}
 
-	log.Infof("Build host spec %#v", spec)
+	log.Debugf("Build host spec %#v", spec)
 	return spec
 }
 func (d *Driver) buildSakuraDiskSpec() *sakura.Disk {
@@ -495,7 +512,7 @@ func (d *Driver) buildSakuraDiskSpec() *sakura.Disk {
 		},
 	}
 
-	log.Infof("Build disk spec %#v", spec)
+	log.Debugf("Build disk spec %#v", spec)
 	return spec
 }
 
@@ -513,7 +530,7 @@ func (d *Driver) buildSakuraDiskEditSpec(publicKey string, noteIDs []string) *sa
 		DisablePWAuth: !d.serverConfig.EnablePWAuth,
 		Notes:         notes[:],
 	}
-	log.Infof("Build disk edit spec %#v", spec)
+	log.Debugf("Build disk edit spec %#v", spec)
 	return spec
 }
 
@@ -542,6 +559,16 @@ func (d *Driver) Kill() error {
 // Remove remove server
 func (d *Driver) Remove() error {
 	log.Infof("Removing sakura cloud server ...")
+
+	if d.DNSZone != "" {
+		log.Infof("Removing DNS Record ...")
+		ip, _ := d.GetIP()
+		err := d.getClient().DeleteDnsRecord(d.DNSZone, d.GetMachineName(), ip)
+		if err != nil {
+			log.Errorf("Error deleting dns: %v", err)
+		}
+		log.Infof("Removed DNS Record.")
+	}
 
 	err := d.Stop()
 	if err != nil {

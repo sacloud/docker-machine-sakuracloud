@@ -29,6 +29,7 @@ const (
 	defaultPrivatePacketFilter = ""
 	defaultUpgradeKernel       = false
 	defaultEnablePWAuth        = false
+	defaultDNSZone             = "" // DNSゾーン名
 )
 
 type SakuraServerConfig struct {
@@ -53,6 +54,7 @@ type SakuraServerConfig struct {
 	PrivatePacketFilter string
 	EnablePWAuth        bool
 	EnginePort          int
+	DNSZone             string
 }
 
 func (c *SakuraServerConfig) GetPlanID() int64 {
@@ -82,6 +84,7 @@ var DefaultServerConfig = &SakuraServerConfig{
 	PrivatePacketFilter: defaultPrivatePacketFilter,
 	EnablePWAuth:        defaultEnablePWAuth,
 	EnginePort:          engine.DefaultPort,
+	DNSZone:             defaultDNSZone,
 }
 
 // Options OptionList
@@ -320,6 +323,14 @@ var Options = &option.List{
 				EnvVar: "SAKURACLOUD_SSH_KEY",
 				Name:   "sakuracloud-ssh-key",
 				Usage:  "SSH Private Key Path",
+				Value:  "",
+			},
+		},
+		option.Option{
+			RawMcnOption: mcnflag.StringFlag{
+				EnvVar: "SAKURACLOUD_DNS_ZONE",
+				Name:   "sakuracloud-dns-zone",
+				Usage:  "Dns Zone(for commonserviceitem)",
 				Value:  "",
 			},
 		},

@@ -78,6 +78,7 @@ Options:
  - `--sakuracloud-enable-password-auth` : The flag of enable password auth.
  - `--sakuracloud-engine-port` : The number of DockerEngine port.
  - `--sakuracloud-ssh-key` : The path of ssh private key.
+ - `--sakuracloud-dns-zone` : The domain name for SAKURACLOUD DNS.
 
 Environment variables and default values:
 
@@ -105,6 +106,7 @@ Environment variables and default values:
 | `--sakuracloud-enable-password-auth`   | `SAKURACLOUD_ENABLE_PASSWORD_AUTH`  | false                 |
 | `--sakuracloud-engine-port`   | `SAKURACLOUD_ENGINE_PORT`  | `2376`                 |
 | `--sakuracloud-ssh-key`   | `SAKURACLOUD_SSH_KEY`  | -                 |
+| `--sakuracloud-dns-zone`   | `SAKURACLOUD_DNS_ZONE`  | -                 |
 
 
 ## Author

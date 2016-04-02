@@ -82,7 +82,7 @@ $ docker-machine create --driver=sakuracloud \
  - `--sakuracloud-enable-password-auth` : SSHでのパスワード認証の有効化(デフォルトは公開鍵認証のみが有効)
  - `--sakuracloud-engine-port` : Docker Engineのポート番号
  - `--sakuracloud-ssh-key` : SSH秘密鍵へのパス(省略した場合は新たなキーペアが生成されます)
-
+ - `--sakuracloud-dns-zone` : さくらのクラウドDNSへ登録する際の対象ドメイン名
 
 `--sakuracloud-disk-size`はさくらのクラウドでサポートされるサイズのみ指定可能です。
 サポートされるサイズについては[サービス仕様・料金](http://cloud.sakura.ad.jp/specification.php)ページを参照してください。(1GB = 1024MB)
@@ -125,6 +125,7 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-enable-password-auth`   | `SAKURACLOUD_ENABLE_PASSWORD_AUTH`  | false                 |
 | `--sakuracloud-engine-port`   | `SAKURACLOUD_ENGINE_PORT`  | `2376`                 |
 | `--sakuracloud-ssh-key`   | `SAKURACLOUD_SSH_KEY`  | -                 |
+| `--sakuracloud-dns-zone`   | `SAKURACLOUD_DNS_ZONE`  | -                 |
 
 
 ## Author
