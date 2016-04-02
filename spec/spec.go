@@ -315,5 +315,13 @@ var Options = &option.List{
 				Value:  engine.DefaultPort,
 			},
 		},
+		option.Option{
+			RawMcnOption: mcnflag.StringFlag{
+				EnvVar: "SAKURACLOUD_SSH_KEY",
+				Name:   "sakuracloud-ssh-key",
+				Usage:  "SSH Private Key Path",
+				Value:  "",
+			},
+		},
 	},
 }

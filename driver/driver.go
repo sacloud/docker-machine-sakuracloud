@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/api"
@@ -28,6 +30,7 @@ type Driver struct {
 	ID           string
 	diskID       string
 	EnginePort   int
+	SSHKey       string
 }
 
 // GetCreateFlags create flags
@@ -99,6 +102,7 @@ func (d *Driver) SetConfigFromFlags(srcFlags drivers.DriverOptions) error {
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = "ubuntu"
 	d.SSHPort = 22
+	d.SSHKey = flags.String("sakuracloud-ssh-key")
 
 	if err := validateClientConfig(d.Client); err != nil {
 		return err
@@ -209,14 +213,53 @@ func (d *Driver) GetState() (state.State, error) {
 	return vmState, nil
 }
 
+// PreCreateCheck check before create
+func (d *Driver) PreCreateCheck() error {
+	if d.SSHKey != "" {
+		if _, err := os.Stat(d.SSHKey); os.IsNotExist(err) {
+			return fmt.Errorf("Ssh key does not exist: %q", d.SSHKey)
+		}
+
+		if _, err := os.Stat(d.SSHKey + ".pub"); os.IsNotExist(err) {
+			return fmt.Errorf("Ssh public key does not exist: %q", d.SSHKey+".pub")
+		}
+
+	}
+
+	return nil
+}
+
 // Create create server on sakuracloud
 func (d *Driver) Create() error {
 	spec := d.buildSakuraServerSpec()
 
-	log.Infof("Creating SSH key...")
-	publicKey, err := d.createSSHKey()
-	if err != nil {
-		return err
+	var publicKey = ""
+	if d.SSHKey == "" {
+		log.Infof("Creating SSH public key...")
+		pKey, err := d.createSSHKey()
+		if err != nil {
+			return err
+		}
+		publicKey = pKey
+	} else {
+		log.Info("Importing SSH key...")
+		// TODO: validate the key is a valid key
+		if err := mcnutils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
+			return fmt.Errorf("unable to copy ssh key: %s", err)
+		}
+		if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
+			return fmt.Errorf("unable to set permissions on the ssh key: %s", err)
+		}
+		if err := mcnutils.CopyFile(d.SSHKey+".pub", d.GetSSHKeyPath()+".pub"); err != nil {
+			return fmt.Errorf("unable to copy ssh key: %s", err)
+		}
+
+		pKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+		if err != nil {
+			return err
+		}
+
+		publicKey = string(pKey)
 	}
 
 	if d.serverConfig.Password == "" {

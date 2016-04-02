@@ -81,6 +81,7 @@ $ docker-machine create --driver=sakuracloud \
  - `--sakuracloud-private-packet-filter`: パケットフィルタのID/名称 (eth1:プライベートセグメント用)
  - `--sakuracloud-enable-password-auth` : SSHでのパスワード認証の有効化(デフォルトは公開鍵認証のみが有効)
  - `--sakuracloud-engine-port` : Docker Engineのポート番号
+ - `--sakuracloud-ssh-key` : SSH秘密鍵へのパス(省略した場合は新たなキーペアが生成されます)
 
 
 `--sakuracloud-disk-size`はさくらのクラウドでサポートされるサイズのみ指定可能です。
@@ -123,6 +124,7 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-upgrade-kernel`   | `SAKURACLOUD_UPGRADE_KERNEL`  | -                   |
 | `--sakuracloud-enable-password-auth`   | `SAKURACLOUD_ENABLE_PASSWORD_AUTH`  | false                 |
 | `--sakuracloud-engine-port`   | `SAKURACLOUD_ENGINE_PORT`  | `2376`                 |
+| `--sakuracloud-ssh-key`   | `SAKURACLOUD_SSH_KEY`  | -                 |
 
 
 ## Author

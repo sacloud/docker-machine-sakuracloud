@@ -77,6 +77,7 @@ Options:
  - `--sakuracloud-private-packet-filter`: The Packet Filter ID or Name for eth1(private).
  - `--sakuracloud-enable-password-auth` : The flag of enable password auth.
  - `--sakuracloud-engine-port` : The number of DockerEngine port.
+ - `--sakuracloud-ssh-key` : The path of ssh private key.
 
 Environment variables and default values:
 
@@ -103,6 +104,7 @@ Environment variables and default values:
 | `--sakuracloud-private-packet-filter`   | `SAKURACLOUD_PRIVATE_PACKET_FILTER`  | -                   |
 | `--sakuracloud-enable-password-auth`   | `SAKURACLOUD_ENABLE_PASSWORD_AUTH`  | false                 |
 | `--sakuracloud-engine-port`   | `SAKURACLOUD_ENGINE_PORT`  | `2376`                 |
+| `--sakuracloud-ssh-key`   | `SAKURACLOUD_SSH_KEY`  | -                 |
 
 
 ## Author
