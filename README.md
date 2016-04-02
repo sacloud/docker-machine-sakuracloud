@@ -5,6 +5,8 @@ to create Docker hosts on [SAKURA CLOUD](http://cloud.sakura.ad.jp)
 
 ([日本語版](README.ja.md))
 
+[![Build Status](https://travis-ci.org/yamamoto-febc/docker-machine-sakuracloud.svg?branch=master)](https://travis-ci.org/yamamoto-febc/docker-machine-sakuracloud)
+
 ## Requirements
 * [Docker Machine](https://docs.docker.com/machine/) 0.5.1+ (is bundled to
   [Docker Toolbox](https://www.docker.com/docker-toolbox) 1.9.1+)
@@ -73,8 +75,7 @@ Options:
  - `--sakuracloud-ignore-virtio-net`: The flag of to not set @virtio-net-pci tag.
  - `--sakuracloud-packet-filter`: The Packet Filter ID or Name for eth0(shared).
  - `--sakuracloud-private-packet-filter`: The Packet Filter ID or Name for eth1(private).
- - `--sakuracloud-upgrade-kernel`: The flag of upgrade kernel to 3.19+.
-
+ - `--sakuracloud-enable-password-auth` : The flag of enable password auth.
 
 Environment variables and default values:
 
@@ -99,7 +100,7 @@ Environment variables and default values:
 | `--sakuracloud-ignore-virtio-net`   | `SAKURACLOUD_IGNORE_VIRTIO_NET`  | -                   |
 | `--sakuracloud-packet-filter`   | `SAKURACLOUD_PACKET_FILTER`  | -                   |
 | `--sakuracloud-private-packet-filter`   | `SAKURACLOUD_PRIVATE_PACKET_FILTER`  | -                   |
-| `--sakuracloud-upgrade-kernel`   | `SAKURACLOUD_UPGRADE_KERNEL`  | -                   |
+| `--sakuracloud-enable-password-auth`   | `SAKURACLOUD_ENABLE_PASSWORD_AUTH`  | false                 |
 
 
 ## Author

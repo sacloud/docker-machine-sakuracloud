@@ -4,6 +4,8 @@
 
 docker-machine 0.5にて[マージ](https://github.com/docker/machine/pull/1902)された、外部プラグイン機構に対応しています。
 
+[![Build Status](https://travis-ci.org/yamamoto-febc/docker-machine-sakuracloud.svg?branch=master)](https://travis-ci.org/yamamoto-febc/docker-machine-sakuracloud)
+
 ## 動作環境
 * [Docker Machine](https://docs.docker.com/machine/) 0.5.1+ (is bundled to
   [Docker Toolbox](https://www.docker.com/docker-toolbox) 1.9.1+)
@@ -77,7 +79,7 @@ $ docker-machine create --driver=sakuracloud \
  - `--sakuracloud-ignore-virtio-net`: 順仮想化ドライバの無効化(@virtio-net-pci 特殊タグの無効化)
  - `--sakuracloud-packet-filter`: パケットフィルタのID/名称 (eth0:共有セグメント用)
  - `--sakuracloud-private-packet-filter`: パケットフィルタのID/名称 (eth1:プライベートセグメント用)
- - `--sakuracloud-upgrade-kernel`: カーネルを3.19以降にアップグレードする(**overlayネットワークなどの利用時は必須**)
+ - `--sakuracloud-enable-password-auth` : SSHでのパスワード認証の有効化(デフォルトは公開鍵認証のみが有効)
 
 
 `--sakuracloud-disk-size`はさくらのクラウドでサポートされるサイズのみ指定可能です。
@@ -118,6 +120,7 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-auto-reboot`         | `SAKURACLOUD_AUTO_REBOOT`        | -                   |
 | `--sakuracloud-ignore-virtio-net`   | `SAKURACLOUD_IGNORE_VIRTIO_NET`  | -                   |
 | `--sakuracloud-upgrade-kernel`   | `SAKURACLOUD_UPGRADE_KERNEL`  | -                   |
+| `--sakuracloud-enable-password-auth`   | `SAKURACLOUD_ENABLE_PASSWORD_AUTH`  | false                 |
 
 
 ## Author
