@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"strconv"
 	"time"
 
@@ -26,6 +27,7 @@ type Driver struct {
 	Client       *api.Client
 	ID           string
 	diskID       string
+	EnginePort   int
 }
 
 // GetCreateFlags create flags
@@ -42,6 +44,7 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 		},
 		Client:       &api.Client{},
 		serverConfig: spec.DefaultServerConfig,
+		EnginePort:   spec.DefaultServerConfig.EnginePort,
 	}
 }
 
@@ -142,6 +145,8 @@ func (d *Driver) SetConfigFromFlags(srcFlags drivers.DriverOptions) error {
 		d.serverConfig.DiskSourceArchiveID = archiveID
 	}
 
+	d.EnginePort = flags.Int("sakuracloud-engine-port")
+
 	return validateSakuraServerConfig(d.Client, d.serverConfig)
 }
 
@@ -163,7 +168,7 @@ func (d *Driver) GetURL() (string, error) {
 	if ip == "" {
 		return "", nil
 	}
-	return "tcp://" + ip + ":2376", nil
+	return fmt.Sprintf("tcp://%s", net.JoinHostPort(ip, strconv.Itoa(d.EnginePort))), nil
 }
 
 // GetSSHHostname return ssh hostname

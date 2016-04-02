@@ -2,6 +2,7 @@ package spec
 
 import (
 	"fmt"
+	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/api"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/option"
@@ -51,6 +52,7 @@ type SakuraServerConfig struct {
 	PacketFilter        string
 	PrivatePacketFilter string
 	EnablePWAuth        bool
+	EnginePort          int
 }
 
 func (c *SakuraServerConfig) GetPlanID() int64 {
@@ -79,6 +81,7 @@ var DefaultServerConfig = &SakuraServerConfig{
 	PacketFilter:        defaultPacketFilter,
 	PrivatePacketFilter: defaultPrivatePacketFilter,
 	EnablePWAuth:        defaultEnablePWAuth,
+	EnginePort:          engine.DefaultPort,
 }
 
 // Options OptionList
@@ -302,6 +305,14 @@ var Options = &option.List{
 				EnvVar: "SAKURACLOUD_ENABLE_PASSWORD_AUTH",
 				Name:   "sakuracloud-enable-password-auth",
 				Usage:  "sakuracloud enable password auth flag",
+			},
+		},
+		option.Option{
+			RawMcnOption: mcnflag.IntFlag{
+				EnvVar: "SAKURACLOUD_ENGINE_PORT",
+				Name:   "sakuracloud-engine-port",
+				Usage:  "Docker engine port",
+				Value:  engine.DefaultPort,
 			},
 		},
 	},
