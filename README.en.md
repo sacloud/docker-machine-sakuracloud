@@ -24,19 +24,12 @@ Download the installer from [here](https://github.com/yamamoto-febc/docker-machi
 
 #### Install for OSX:
 
-```console
-$ brew tap yamamoto-febc/docker-machine-sakuracloud
-$ brew install docker-machine-sakuracloud
-```
-
-#### Install via manualy:
-
 download the binary `docker-machine-driver-sakuracloud`
 and  make it available by `$PATH`, for example by putting it to `/usr/local/bin/`
 
-
 ```console
-$ chmod +x /usr/local/bin/docker-machine-driver-sakuracloud
+curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.9/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
+  chmod +x /usr/local/bin/docker-machine/docker-machine-driver-sakuracloud
 ```
 
 The latest version of `docker-machine-driver-sakuracloud` binary is available on
