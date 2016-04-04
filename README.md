@@ -22,20 +22,13 @@
 
 #### OSX(Mac)の場合:
 
-Homebrewでインストールします。以下のコマンドを実行してください。
-
-```console
-$ brew tap yamamoto-febc/docker-machine-sakuracloud
-$ brew install docker-machine-sakuracloud
-```
-#### 手動でインストールする場合:
-
 `docker-machine-driver-sakuracloud`バイナリをダウンロードし、パス(`$PATH`)を通してください。
 (Windowsの場合はdocker-machine.exeと同じフォルダに配置すればよいです)
 配置後にchmod +xしておいてください。
 
 ```console
-$ chmod +x /usr/local/bin/docker-machine-driver-sakuracloud
+curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.9/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
+  chmod +x /usr/local/bin/docker-machine/docker-machine-driver-sakuracloud
 ```
 
 `docker-machine-driver-sakuracloud`の最新のバイナリはこちらの["Releases"](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/latest)ページからダウンロードできます。
