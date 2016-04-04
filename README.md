@@ -134,7 +134,7 @@ Sandboxリージョンについては外部からログインができないた�
 
 このモードでは、`docker-machine create`コマンドで指定するオプションをあらかじめ指定/保持しておくことができます。
 
-詳細は(Wikiページ)[https://github.com/yamamoto-febc/docker-machine-sakuracloud/wiki/Standalone-Mode]を参照してください。
+詳細は[Wikiページ](https://github.com/yamamoto-febc/docker-machine-sakuracloud/wiki/Standalone-Mode)を参照してください。
 
 ## Author
 
