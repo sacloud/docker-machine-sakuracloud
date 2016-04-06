@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/yamamoto-febc/docker-machine-sakuracloud",
-	"GoVersion": "go1.5.3",
+	"GoVersion": "go1.6",
 	"Packages": [
 		"github.com/yamamoto-febc/docker-machine-sakuracloud",
 		"github.com/yamamoto-febc/docker-machine-sakuracloud/cmd",
@@ -22,53 +22,58 @@
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/term",
-			"Comment": "v1.4.1-11369-g8eb8a1d",
-			"Rev": "8eb8a1d6b8f89941d0d5db5b59cd6f912d7426db"
+			"Comment": "v1.4.1-11452-gd5dfc4e",
+			"Rev": "d5dfc4e5262a56181b2203c3fb6474ebe3a4ae92"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/commands/mcndirs",
-			"Comment": "v0.6.0-rc4-177-g5b9663f",
-			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
+			"Comment": "v0.7.0-rc2-6-g5b4159d",
+			"Rev": "5b4159d0d8a1c96cf585b23710f2090ddb9c9384"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/drivers",
-			"Comment": "v0.6.0-rc4-177-g5b9663f",
-			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
+			"Comment": "v0.7.0-rc2-6-g5b4159d",
+			"Rev": "5b4159d0d8a1c96cf585b23710f2090ddb9c9384"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/engine",
-			"Comment": "v0.6.0-rc4-177-g5b9663f",
-			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
+			"Comment": "v0.7.0-rc2-6-g5b4159d",
+			"Rev": "5b4159d0d8a1c96cf585b23710f2090ddb9c9384"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/log",
-			"Comment": "v0.6.0-rc4-177-g5b9663f",
-			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
+			"Comment": "v0.7.0-rc2-6-g5b4159d",
+			"Rev": "5b4159d0d8a1c96cf585b23710f2090ddb9c9384"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/mcnflag",
-			"Comment": "v0.6.0-rc4-177-g5b9663f",
-			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
+			"Comment": "v0.7.0-rc2-6-g5b4159d",
+			"Rev": "5b4159d0d8a1c96cf585b23710f2090ddb9c9384"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/mcnutils",
-			"Comment": "v0.6.0-rc4-177-g5b9663f",
-			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
+			"Comment": "v0.7.0-rc2-6-g5b4159d",
+			"Rev": "5b4159d0d8a1c96cf585b23710f2090ddb9c9384"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/ssh",
-			"Comment": "v0.6.0-rc4-177-g5b9663f",
-			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
+			"Comment": "v0.7.0-rc2-6-g5b4159d",
+			"Rev": "5b4159d0d8a1c96cf585b23710f2090ddb9c9384"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/state",
-			"Comment": "v0.6.0-rc4-177-g5b9663f",
-			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
+			"Comment": "v0.7.0-rc2-6-g5b4159d",
+			"Rev": "5b4159d0d8a1c96cf585b23710f2090ddb9c9384"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/version",
-			"Comment": "v0.6.0-rc4-177-g5b9663f",
-			"Rev": "5b9663f8960af73c048e14cc60566ae487c07728"
+			"Comment": "v0.7.0-rc2-6-g5b4159d",
+			"Rev": "5b4159d0d8a1c96cf585b23710f2090ddb9c9384"
+		},
+		{
+			"ImportPath": "github.com/docker/machine/version",
+			"Comment": "v0.7.0-rc2-6-g5b4159d",
+			"Rev": "5b4159d0d8a1c96cf585b23710f2090ddb9c9384"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-runewidth",

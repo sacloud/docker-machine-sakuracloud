@@ -4,8 +4,8 @@ import (
 	"github.com/docker/machine/commands/mcndirs"
 	//"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/stretchr/testify/assert"
-	sakura "github.com/yamamoto-febc/docker-machine-sakuracloud"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/persist"
+	sakura "github.com/yamamoto-febc/docker-machine-sakuracloud/spec"
 	"os"
 	"testing"
 )

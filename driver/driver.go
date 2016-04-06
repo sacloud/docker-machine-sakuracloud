@@ -33,6 +33,7 @@ type Driver struct {
 	EnginePort   int
 	SSHKey       string
 	DNSZone      string
+	GSLB         string
 }
 
 // GetCreateFlags create flags
@@ -51,6 +52,7 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 		serverConfig: spec.DefaultServerConfig,
 		EnginePort:   spec.DefaultServerConfig.EnginePort,
 		DNSZone:      spec.DefaultServerConfig.DNSZone,
+		GSLB:         spec.DefaultServerConfig.GSLB,
 	}
 }
 
@@ -84,6 +86,10 @@ func validateSakuraServerConfig(c *api.Client, config *spec.SakuraServerConfig) 
 	res, err := c.IsValidPlan(config.Core, config.MemorySize)
 	if !res || err != nil {
 		return fmt.Errorf("Invalid Parameter: core or memory is invalid : %v", err)
+	}
+
+	if config.PrivateIPOnly && config.GSLB != "" {
+		return fmt.Errorf("GSLB Needs Global IP. Please unset --sakuracloud-private-ip-only.")
 	}
 
 	return nil
@@ -154,6 +160,7 @@ func (d *Driver) SetConfigFromFlags(srcFlags drivers.DriverOptions) error {
 
 	d.EnginePort = flags.Int("sakuracloud-engine-port")
 	d.DNSZone = flags.String("sakuracloud-dns-zone")
+	d.GSLB = flags.String("sakuracloud-gslb")
 
 	return validateSakuraServerConfig(d.Client, d.serverConfig)
 }
@@ -385,6 +392,20 @@ func (d *Driver) Create() error {
 		if ns != nil {
 			log.Infof("Added DNS Zone,Please Set Whois NameServer to [%s]", strings.Join(ns, ","))
 		}
+
+	}
+
+	if d.GSLB != "" {
+		log.Infof("Setting SakuraCloud GSLB: %v", d.GSLB)
+		ip, _ := d.GetIP()
+		fqdn, err := d.getClient().SetupGslbRecord(d.GSLB, ip)
+		if err != nil {
+			return fmt.Errorf("Error setting SakuraCloud GSLV: %v", err)
+		}
+
+		if fqdn != nil {
+			log.Infof("Added GSLB,Please Set CNAME Record : ex. 'your-lb-hostname IN CNAME %s'", fqdn)
+		}
 	}
 
 	//start
@@ -568,6 +589,18 @@ func (d *Driver) Remove() error {
 			log.Errorf("Error deleting dns: %v", err)
 		}
 		log.Infof("Removed DNS Record.")
+	}
+
+	if d.GSLB != "" {
+		log.Infof("Removing GSLB server ...")
+		ip, _ := d.GetIP()
+		err := d.getClient().DeleteGslbServer(d.GSLB, ip)
+		if err != nil {
+			log.Errorf("Error deleting GSLB: %v", err)
+		}
+		log.Infof("Removed GSLB. Wait 30s ...")
+		time.Sleep(30 * time.Second)
+		log.Infof("Done.")
 	}
 
 	err := d.Stop()
