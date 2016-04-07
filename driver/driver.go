@@ -29,7 +29,7 @@ type Driver struct {
 	serverConfig *spec.SakuraServerConfig
 	Client       *api.Client
 	ID           string
-	diskID       string
+	DiskID       string
 	EnginePort   int
 	SSHKey       string
 	DNSZone      string
@@ -343,7 +343,7 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("Error creating disk: %v", err)
 	}
 	log.Infof("Created Disk ID: %v", diskID)
-	d.diskID = diskID
+	d.DiskID = diskID
 
 	//wait for disk available
 	d.waitForDiskAvailable()
@@ -469,7 +469,7 @@ func (d *Driver) waitForServerByState(waitForState state.State) {
 func (d *Driver) waitForDiskAvailable() {
 	log.Infof("Waiting for disk to become available")
 	for {
-		s, err := d.getClient().DiskState(d.diskID)
+		s, err := d.getClient().DiskState(d.DiskID)
 		if err != nil {
 			log.Debugf("Failed to get DiskState - %+v", err)
 			continue
@@ -610,7 +610,7 @@ func (d *Driver) Remove() error {
 		d.waitForServerByState(state.Stopped)
 	}
 
-	err = d.getClient().Delete(d.ID, []string{d.diskID})
+	err = d.getClient().Delete(d.ID, []string{d.DiskID})
 	if err != nil {
 		log.Errorf("Error deleting server: %v", err)
 	} else {
