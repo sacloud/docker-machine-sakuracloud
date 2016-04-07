@@ -18,7 +18,7 @@
 
 #### Windowsの場合:
 
-[こちら](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.9/DockerMachineSakuracloudSetup.exe)からインストーラーをダウンロードして実行してください。
+[こちら](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.10/DockerMachineSakuracloudSetup.exe)からインストーラーをダウンロードして実行してください。
 
 #### OSX(Mac)の場合:
 
@@ -27,7 +27,7 @@
 配置後にchmod +xしておいてください。
 
 ```console
-curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.9/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
+curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.10/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
   chmod +x /usr/local/bin/docker-machine/docker-machine-driver-sakuracloud
 ```
 
@@ -67,6 +67,7 @@ $ docker-machine create --driver=sakuracloud \
  - `--sakuracloud-engine-port` : Docker Engineのポート番号
  - `--sakuracloud-gateway`: デフォルトゲートウェイ(eth1を使う場合は必須)
  - `--sakuracloud-group`: @group 特殊タグ
+ - `--sakuracloud-gslb`: さくらのクラウドGSLBの名前(存在しなければ新規作成)
  - `--sakuracloud-ignore-virtio-net`: 順仮想化ドライバの無効化(@virtio-net-pci 特殊タグの無効化)
  - `--sakuracloud-memory-size`: メモリサイズ(GB単位).
  - `--sakuracloud-packet-filter`: パケットフィルタのID/名称 (eth0:共有セグメント用)
@@ -111,6 +112,7 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-engine-port`   | `SAKURACLOUD_ENGINE_PORT`  | `2376`                 |
 | `--sakuracloud-gateway`     | `SAKURACLOUD_GATEWAY`     | -                 |
 | `--sakuracloud-group`               | `SAKURACLOUD_GROUP`              | -                   |
+| `--sakuracloud-gslb`               | `SAKURACLOUD_GSLB`              | -                   |
 | `--sakuracloud-ignore-virtio-net`   | `SAKURACLOUD_IGNORE_VIRTIO_NET`  | -                   |
 | `--sakuracloud-memory-size`         | `SAKURACLOUD_MEMORY_SIZE`         | `1`                   |
 | `--sakuracloud-packet-filter`   | `SAKURACLOUD_PACKET_FILTER`  | -                   |

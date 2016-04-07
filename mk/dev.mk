@@ -7,3 +7,6 @@ dep-restore:
 	$(if $(GODEP), , \
 		$(error Please install godep: go get github.com/tools/godep))
 	$(GODEP) restore -v
+
+test:
+	go test $(shell go list ./... | grep -v vendor/)

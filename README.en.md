@@ -19,7 +19,7 @@ to create Docker hosts on [SAKURA CLOUD](http://cloud.sakura.ad.jp)
 
 #### Install for Windows
 
-Download the installer from [here](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.8/DockerMachineSakuracloudSetup.exe)
+Download the installer from [here](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.10/DockerMachineSakuracloudSetup.exe)
  and run it.
 
 #### Install for OSX:
@@ -28,7 +28,7 @@ download the binary `docker-machine-driver-sakuracloud`
 and  make it available by `$PATH`, for example by putting it to `/usr/local/bin/`
 
 ```console
-curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.9/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
+curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.10/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
   chmod +x /usr/local/bin/docker-machine/docker-machine-driver-sakuracloud
 ```
 
@@ -65,6 +65,7 @@ Options:
  - `--sakuracloud-gateway`: The default gateway ip address.
  - `--sakuracloud-region`: The resion to create the server in.
  - `--sakuracloud-group`: The @group tag.
+ - `--sakuracloud-gslb`: The Name of GSLB.
  - `--sakuracloud-auto-reboot`: The @auto-reboot tag.
  - `--sakuracloud-ignore-virtio-net`: The flag of to not set @virtio-net-pci tag.
  - `--sakuracloud-packet-filter`: The Packet Filter ID or Name for eth0(shared).
@@ -91,6 +92,7 @@ Environment variables and default values:
 | `--sakuracloud-engine-port`   | `SAKURACLOUD_ENGINE_PORT`  | `2376`                 |
 | `--sakuracloud-gateway`     | `SAKURACLOUD_GATEWAY`     | -                 |
 | `--sakuracloud-group`               | `SAKURACLOUD_GROUP`              | -                   |
+| `--sakuracloud-gslb`               | `SAKURACLOUD_GSLB`              | -                   |
 | `--sakuracloud-ignore-virtio-net`   | `SAKURACLOUD_IGNORE_VIRTIO_NET`  | -                   |
 | `--sakuracloud-memory-size`         | `SAKURACLOUD_MEMORY_SIZE`         | `1`                   |
 | `--sakuracloud-packet-filter`   | `SAKURACLOUD_PACKET_FILTER`  | -                   |

@@ -27,9 +27,9 @@ const (
 	defaultIgnoreVirtioNet     = false    // virtioNICの無効化
 	defaultPacketFilter        = ""
 	defaultPrivatePacketFilter = ""
-	defaultUpgradeKernel       = false
 	defaultEnablePWAuth        = false
 	defaultDNSZone             = "" // DNSゾーン名
+	defaultGSLB                = "" // DNSゾーン名
 )
 
 type SakuraServerConfig struct {
@@ -55,6 +55,7 @@ type SakuraServerConfig struct {
 	EnablePWAuth        bool
 	EnginePort          int
 	DNSZone             string
+	GSLB                string
 }
 
 func (c *SakuraServerConfig) GetPlanID() int64 {
@@ -85,6 +86,7 @@ var DefaultServerConfig = &SakuraServerConfig{
 	EnablePWAuth:        defaultEnablePWAuth,
 	EnginePort:          engine.DefaultPort,
 	DNSZone:             defaultDNSZone,
+	GSLB:                defaultGSLB,
 }
 
 // Options OptionList
@@ -331,6 +333,14 @@ var Options = &option.List{
 				EnvVar: "SAKURACLOUD_DNS_ZONE",
 				Name:   "sakuracloud-dns-zone",
 				Usage:  "Dns Zone(for commonserviceitem)",
+				Value:  "",
+			},
+		},
+		option.Option{
+			RawMcnOption: mcnflag.StringFlag{
+				EnvVar: "SAKURACLOUD_GSLB",
+				Name:   "sakuracloud-gslb",
+				Usage:  "GSLB Name",
 				Value:  "",
 			},
 		},
