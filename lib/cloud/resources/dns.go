@@ -84,5 +84,5 @@ type DnsRecordSet struct {
 	Name  string `json:",omitempty"`
 	Type  string `json:",omitempty"`
 	RData string `json:",omitempty"`
-	TTL   string `json:",omitempty"`
+	TTL   int    `json:",omitempty"`
 }
