@@ -19,7 +19,7 @@ to create Docker hosts on [SAKURA CLOUD](http://cloud.sakura.ad.jp)
 
 #### Install for Windows
 
-Download the installer from [here](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.10/DockerMachineSakuracloudSetup.exe)
+Download the installer from [here](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.10-p1/DockerMachineSakuracloudSetup.exe)
  and run it.
 
 #### Install for OSX:
@@ -28,7 +28,7 @@ download the binary `docker-machine-driver-sakuracloud`
 and  make it available by `$PATH`, for example by putting it to `/usr/local/bin/`
 
 ```console
-curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.10/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
+curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.10-p1/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
   chmod +x /usr/local/bin/docker-machine/docker-machine-driver-sakuracloud
 ```
 
