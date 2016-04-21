@@ -2,7 +2,7 @@
 
 [Docker Machine](https://docs.docker.com/machine/)で[さくらのクラウド](http://cloud.sakura.ad.jp)上の仮想マシンを利用できるようにするプラグインです。
 
-([英語語版](README.en.md))
+([English version](README.en.md))
 
 [![Build Status](https://travis-ci.org/yamamoto-febc/docker-machine-sakuracloud.svg?branch=master)](https://travis-ci.org/yamamoto-febc/docker-machine-sakuracloud)
 
