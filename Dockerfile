@@ -1,4 +1,4 @@
-FROM golang:1.6.0
+FROM golang:1.6.2
 MAINTAINER Kazumichi Yamamoto <yamamoto.febc@gmail.com>
 
 RUN go get  github.com/golang/lint/golint \
