@@ -11,7 +11,7 @@ import (
 const (
 	sakuraCloudAPIRoot                = "https://secure.sakura.ad.jp/cloud/zone"
 	sakuraCloudAPIRootSuffix          = "api/cloud/1.1"
-	sakuraCloudPublicImageSearchWords = "Ubuntu%20Server%2014%2064bit"
+	sakuraCloudPublicImageSearchWords = "Ubuntu%20Server%2016.04%20LTS%2064bit"
 )
 
 // Client type of sakuracloud api client config values

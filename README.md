@@ -18,7 +18,7 @@
 
 #### Windowsの場合:
 
-[こちら](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.10-p1/DockerMachineSakuracloudSetup.exe)からインストーラーをダウンロードして実行してください。
+[こちら](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.11/DockerMachineSakuracloudSetup.exe)からインストーラーをダウンロードして実行してください。
 
 #### OSX(Mac)の場合:
 
@@ -27,7 +27,7 @@
 配置後にchmod +xしておいてください。
 
 ```console
-curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.10-p1/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
+curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.11/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
   chmod +x /usr/local/bin/docker-machine/docker-machine-driver-sakuracloud
 ```
 

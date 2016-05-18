@@ -41,5 +41,5 @@ func (c *Client) GetUbuntuArchiveID() (string, error) {
 		return ubuntu.Archives[0].ID, nil
 	}
 
-	return "", errors.New("Archive'Ubuntu Server 14.04 LTS 64bit' not found.")
+	return "", errors.New("Archive'Ubuntu Server 16.04 LTS 64bit' not found.")
 }
