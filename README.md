@@ -22,7 +22,7 @@ docker-machineとdocker-machine-sakuracloud同梱したDockerイメージを用�
 
 [sacloud/docker-machine](https://hub.docker.com/r/sacloud/docker-machine/)
 
-お手元のマシンにDockerが無い場合、以降の[ローカルインストール](##ローカルインストールでの実行)を参照ください。
+お手元のマシンにDockerが無い場合、以降の[ローカルインストール](#ローカルインストールでの実行)を参照ください。
 
 Dockerでの実行方法
 
