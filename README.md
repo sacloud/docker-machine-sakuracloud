@@ -14,7 +14,35 @@
 * OSX 10.9+  : amd64
 * Windows 10 : amd64
 
-## インストール
+## 実行方法
+
+### Dockerコンテナでの実行
+
+docker-machineとdocker-machine-sakuracloud同梱したDockerイメージを用意しています。
+
+[sacloud/docker-machine](https://hub.docker.com/r/sacloud/docker-machine/)
+
+お手元のマシンにDockeがインストールされていれば、以下のように実行できます。
+
+お手元のマシンにDockerが無い場合、以降の[インストール](#インストール)セクションを参照ください。
+
+```bash:書式
+docker run [dockerコマンドオプション] sacloud/docker-machine [docker-machineオプション]
+```
+
+マシンの作成を行う場合、以下のように実行します。
+
+```bash:コマンド例
+docker run -it --rm -e MACHINE_STORAGE_PATH=$HOME/.docker/machine \
+                    -e SAKURACLOUD_ACCESS_TOKEN=[トークン] \
+                    -e SAKURACLOUD_ACCESS_TOKEN_SECRET=[シークレット] \
+                    -v $HOME:/.docker:$HOME/.docker \
+                    sacloud/docker-machine create -d sakuracloud sakura-dev
+```
+
+
+
+## ローカルインストールでの実行
 
 #### Windowsの場合:
 
