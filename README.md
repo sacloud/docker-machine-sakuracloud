@@ -36,7 +36,7 @@ docker run [dockerコマンドオプション] sacloud/docker-machine [docker-ma
 docker run -it --rm -e MACHINE_STORAGE_PATH=$HOME/.docker/machine \
                     -e SAKURACLOUD_ACCESS_TOKEN=[トークン] \
                     -e SAKURACLOUD_ACCESS_TOKEN_SECRET=[シークレット] \
-                    -v $HOME:/.docker:$HOME/.docker \
+                    -v $HOME/.docker:$HOME/.docker \
                     sacloud/docker-machine create -d sakuracloud sakura-dev
 ```
 
