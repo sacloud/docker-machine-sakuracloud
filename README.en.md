@@ -19,7 +19,7 @@ to create Docker hosts on [SAKURA CLOUD](http://cloud.sakura.ad.jp)
 
 #### Install for Windows
 
-Download the installer from [here](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.11/DockerMachineSakuracloudSetup.exe)
+Download the installer from [here](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.12/DockerMachineSakuracloudSetup.exe)
  and run it.
 
 #### Install for OSX:
@@ -28,7 +28,7 @@ download the binary `docker-machine-driver-sakuracloud`
 and  make it available by `$PATH`, for example by putting it to `/usr/local/bin/`
 
 ```console
-curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.11/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
+curl -L https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/download/v0.0.12/docker-machine-driver-sakuracloud-`uname -s`-`uname -m` >/usr/local/bin/docker-machine-driver-sakuracloud && \
   chmod +x /usr/local/bin/docker-machine/docker-machine-driver-sakuracloud
 ```
 
@@ -100,7 +100,7 @@ Environment variables and default values:
 | `--sakuracloud-private-ip`       | `SAKURACLOUD_PRIVATE_IP`     | -                 |
 | `--sakuracloud-private-ip-subnet-mask`     | `SAKURACLOUD_PRIVATE_IP_SUBNET_MASK`     | `255.255.255.0`          |
 | `--sakuracloud-private-packet-filter`   | `SAKURACLOUD_PRIVATE_PACKET_FILTER`  | -                   |
-| `--sakuracloud-region`              | `SAKURACLOUD_REGION`              | `is1a`                   |
+| `--sakuracloud-region`              | `SAKURACLOUD_REGION`              | `is1b`                   |
 | `--sakuracloud-ssh-key`   | `SAKURACLOUD_SSH_KEY`  | -                 |
 
 
