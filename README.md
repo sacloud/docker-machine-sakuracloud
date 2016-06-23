@@ -148,7 +148,7 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-private-ip`       | `SAKURACLOUD_PRIVATE_IP`     | -                 |
 | `--sakuracloud-private-ip-subnet-mask`     | `SAKURACLOUD_PRIVATE_IP_SUBNET_MASK`     | `255.255.255.0`          |
 | `--sakuracloud-private-packet-filter`   | `SAKURACLOUD_PRIVATE_PACKET_FILTER`  | -                   |
-| `--sakuracloud-region`              | `SAKURACLOUD_REGION`              | `is1a`                   |
+| `--sakuracloud-region`              | `SAKURACLOUD_REGION`              | `is1b`                   |
 | `--sakuracloud-ssh-key`   | `SAKURACLOUD_SSH_KEY`  | -                 |
 
 ## スタンドアロンモード
