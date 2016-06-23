@@ -46,8 +46,8 @@ type Option struct {
 	// RawMcnOption return mcnflag.Flag
 	RawMcnOption mcnflag.Flag
 	// CandidateFunc return candidate list for bash complement
-	CandidateFunc    func(*api.Client) []string
-	UsageStringsFunc func(*api.Client) string
+	CandidateFunc    func(*api.APIClient) []string
+	UsageStringsFunc func(*api.APIClient) string
 }
 
 // KeyName return cli option keyname

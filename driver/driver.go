@@ -19,15 +19,15 @@ import (
 	"github.com/docker/machine/libmachine/state"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/api"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cli"
-	sakura "github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cloud/resources"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/spec"
+	"github.com/yamamoto-febc/libsacloud/sacloud"
 )
 
 // Driver sakuracloud driver
 type Driver struct {
 	*drivers.BaseDriver
 	serverConfig *spec.SakuraServerConfig
-	Client       *api.Client
+	Client       *api.APIClient
 	ID           string
 	DiskID       string
 	EnginePort   int
@@ -48,7 +48,7 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
-		Client:       &api.Client{},
+		Client:       &api.APIClient{},
 		serverConfig: spec.DefaultServerConfig,
 		EnginePort:   spec.DefaultServerConfig.EnginePort,
 		DNSZone:      spec.DefaultServerConfig.DNSZone,
@@ -56,18 +56,7 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 	}
 }
 
-func validateClientConfig(c *api.Client) error {
-	if c.AccessToken == "" {
-		return fmt.Errorf("Missing required setting - --sakuracloud-access-token")
-	}
-
-	if c.AccessTokenSecret == "" {
-		return fmt.Errorf("Missing required setting - --sakuracloud-access-token-secret")
-	}
-	return nil
-}
-
-func validateSakuraServerConfig(c *api.Client, config *spec.SakuraServerConfig) error {
+func validateSakuraServerConfig(c *api.APIClient, config *spec.SakuraServerConfig) error {
 	//さくら用設定のバリデーション
 
 	//ex. プランの存在確認や矛盾した設定の検出など
@@ -100,7 +89,7 @@ func (d *Driver) SetConfigFromFlags(srcFlags drivers.DriverOptions) error {
 	cliClient := cli.NewClient()
 	flags := cliClient.GetDriverOptions(srcFlags)
 
-	d.Client = api.NewClient(
+	d.Client = api.NewAPIClient(
 		flags.String("sakuracloud-access-token"),
 		flags.String("sakuracloud-access-token-secret"),
 		flags.String("sakuracloud-region"),
@@ -113,7 +102,7 @@ func (d *Driver) SetConfigFromFlags(srcFlags drivers.DriverOptions) error {
 	d.SSHPort = 22
 	d.SSHKey = flags.String("sakuracloud-ssh-key")
 
-	if err := validateClientConfig(d.Client); err != nil {
+	if err := d.getClient().ValidateClientConfig(); err != nil {
 		return err
 	}
 
@@ -165,7 +154,8 @@ func (d *Driver) SetConfigFromFlags(srcFlags drivers.DriverOptions) error {
 	return validateSakuraServerConfig(d.Client, d.serverConfig)
 }
 
-func (d *Driver) getClient() *api.Client {
+func (d *Driver) getClient() *api.APIClient {
+	d.Client.Init()
 	return d.Client
 }
 
@@ -202,6 +192,7 @@ func (d *Driver) GetIP() (string, error) {
 	}
 
 	return d.getClient().GetIP(d.ID, d.serverConfig.PrivateIPOnly)
+
 }
 
 // GetState get server power state
@@ -254,7 +245,6 @@ func (d *Driver) Create() error {
 		publicKey = pKey
 	} else {
 		log.Info("Importing SSH key...")
-		// TODO: validate the key is a valid key
 		if err := mcnutils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
 			return fmt.Errorf("unable to copy ssh key: %s", err)
 		}
@@ -283,7 +273,7 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return fmt.Errorf("Error creating host: %v", err)
 	}
-	id := serverResponse.Server.ID
+	id := serverResponse.ID
 	log.Infof("Created Server ID: %s", id)
 	d.ID = id
 
@@ -366,7 +356,7 @@ func (d *Driver) Create() error {
 	//connect packet filter
 	if d.serverConfig.PacketFilter != "" {
 		log.Infof("Connecting Packet Filter(shared): %v", d.serverConfig.PacketFilter)
-		err := d.getClient().ConnectPacketFilterToSharedNIC(serverResponse.Server, d.serverConfig.PacketFilter)
+		err := d.getClient().ConnectPacketFilterToSharedNIC(serverResponse, d.serverConfig.PacketFilter)
 		if err != nil {
 			return fmt.Errorf("Error connecting PacketFilter(shared): %v", err)
 		}
@@ -374,7 +364,7 @@ func (d *Driver) Create() error {
 
 	if d.serverConfig.PrivatePacketFilter != "" {
 		log.Infof("Connecting Packet Filter(private): %v", d.serverConfig.PrivatePacketFilter)
-		err := d.getClient().ConnectPacketFilterToPrivateNIC(serverResponse.Server, d.serverConfig.PrivatePacketFilter)
+		err := d.getClient().ConnectPacketFilterToPrivateNIC(serverResponse, d.serverConfig.PrivatePacketFilter)
 		if err != nil {
 			return fmt.Errorf("Error connecting PacketFilter(prvate): %v", err)
 		}
@@ -469,13 +459,13 @@ func (d *Driver) waitForServerByState(waitForState state.State) {
 func (d *Driver) waitForDiskAvailable() {
 	log.Infof("Waiting for disk to become available")
 	for {
-		s, err := d.getClient().DiskState(d.DiskID)
+		s, err := d.getClient().GetDiskByID(d.DiskID)
 		if err != nil {
 			log.Debugf("Failed to get DiskState - %+v", err)
 			continue
 		}
 
-		if s == "available" {
+		if s.Availability == "available" {
 			break
 		} else {
 			log.Debugf("Still waiting - state is %s...", s)
@@ -484,16 +474,7 @@ func (d *Driver) waitForDiskAvailable() {
 	}
 }
 
-func (d *Driver) buildSakuraServerSpec() *sakura.Server {
-
-	var network []map[string]string
-	if d.serverConfig.ConnectedSwitch != "" {
-		network = []map[string]string{{"Scope": "shared"}, {"ID": d.serverConfig.ConnectedSwitch}}
-	} else if d.serverConfig.PrivateIP != "" {
-		network = []map[string]string{{"Scope": "shared"}, nil}
-	} else {
-		network = []map[string]string{{"Scope": "shared"}}
-	}
+func (d *Driver) buildSakuraServerSpec() *sacloud.Server {
 
 	var tags []string
 	if !d.serverConfig.IgnoreVirtioNet {
@@ -506,49 +487,54 @@ func (d *Driver) buildSakuraServerSpec() *sakura.Server {
 		tags = append(tags, "@auto-reboot")
 	}
 
-	spec := &sakura.Server{
+	spec := &sacloud.Server{
 		Name:        d.serverConfig.HostName,
 		Description: "",
-		ServerPlan: sakura.NumberResource{
-			ID: d.serverConfig.GetPlanID(),
-		},
-		ConnectedSwitches: network,
-		Tags:              tags[:],
+		Tags:        tags[:],
+	}
+	spec.SetServerPlanByID(d.serverConfig.GetPlanID())
+	spec.AddPublicNWConnectedParam()
+	if d.serverConfig.ConnectedSwitch != "" {
+		spec.AddExistsSwitchConnectedParam(d.serverConfig.ConnectedSwitch)
+	} else if d.serverConfig.PrivateIP != "" {
+		spec.AddEmptyConnectedParam()
 	}
 
 	log.Debugf("Build host spec %#v", spec)
 	return spec
 }
-func (d *Driver) buildSakuraDiskSpec() *sakura.Disk {
-	diskPlan, _ := strconv.ParseInt(d.serverConfig.DiskPlan, 10, 64)
-	spec := &sakura.Disk{
-		Name: d.serverConfig.DiskName,
-		Plan: sakura.NumberResource{
-			ID: diskPlan,
-		},
+func (d *Driver) buildSakuraDiskSpec() *sacloud.Disk {
+	spec := &sacloud.Disk{
+		Name:       d.serverConfig.DiskName,
 		SizeMB:     d.serverConfig.DiskSize,
-		Connection: d.serverConfig.DiskConnection,
-		SourceArchive: sakura.Resource{
-			ID: d.serverConfig.DiskSourceArchiveID,
-		},
+		Connection: sacloud.EDiskConnection(d.serverConfig.DiskConnection),
+	}
+
+	spec.SetSourceArchive(d.serverConfig.DiskSourceArchiveID)
+	if d.serverConfig.DiskPlan == "2" {
+		spec.SetDiskPlanToHDD()
+	} else {
+		spec.SetDiskPlanToSSD()
 	}
 
 	log.Debugf("Build disk spec %#v", spec)
 	return spec
 }
 
-func (d *Driver) buildSakuraDiskEditSpec(publicKey string, noteIDs []string) *sakura.DiskEditValue {
-	notes := make([]sakura.Resource, len(noteIDs))
+func (d *Driver) buildSakuraDiskEditSpec(publicKey string, noteIDs []string) *sacloud.DiskEditValue {
+	notes := make([]*sacloud.Resource, len(noteIDs))
 	for n := range noteIDs {
-		notes[n] = sakura.Resource{ID: noteIDs[n]}
+		notes[n] = &sacloud.Resource{ID: noteIDs[n]}
 	}
 
-	spec := &sakura.DiskEditValue{
-		Password: d.serverConfig.Password,
-		SSHKey: sakura.SSHKey{
+	pAuth := !d.serverConfig.EnablePWAuth
+
+	spec := &sacloud.DiskEditValue{
+		Password: &d.serverConfig.Password,
+		SSHKey: &sacloud.SSHKey{
 			PublicKey: publicKey,
 		},
-		DisablePWAuth: !d.serverConfig.EnablePWAuth,
+		DisablePWAuth: &pAuth,
 		Notes:         notes[:],
 	}
 	log.Debugf("Build disk edit spec %#v", spec)

@@ -29,7 +29,7 @@ type API interface {
 	ListOptions() []option.Option
 	GetOption(string) *option.Option
 	ClearConfigValue(string) error
-	GetClient() *api.Client
+	GetClient() *api.APIClient
 	GetDriverOptions(drivers.DriverOptions) drivers.DriverOptions
 	persist.Store
 }
@@ -119,13 +119,13 @@ func (c *client) ClearConfigValue(key string) error {
 	return nil
 }
 
-func (c *client) GetClient() *api.Client {
+func (c *client) GetClient() *api.APIClient {
 	token, _ := c.GetConfigValue("access-token")
 	secret, _ := c.GetConfigValue("access-token-secret")
 	region, _ := c.GetConfigValue("region")
 
 	if token.CurrentValue != "" && secret.CurrentValue != "" && region.CurrentValue != "" {
-		return api.NewClient(token.CurrentValue, secret.CurrentValue, region.CurrentValue)
+		return api.NewAPIClient(token.CurrentValue, secret.CurrentValue, region.CurrentValue)
 	}
 	return nil
 }

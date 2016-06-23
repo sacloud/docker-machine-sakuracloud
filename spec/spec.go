@@ -6,11 +6,10 @@ import (
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/api"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/option"
-	"strconv"
 )
 
 const (
-	defaultRegion              = "is1a" // 石狩第１ゾーン
+	defaultRegion              = "is1b" // 石狩第１ゾーン
 	defaultCore                = 1      //デフォルトコア数
 	defaultMemorySize          = 1      // デフォルトメモリサイズ
 	defaultConnectedSwitch     = ""     // 追加で接続するSwitchのID
@@ -58,9 +57,8 @@ type SakuraServerConfig struct {
 	GSLB                string
 }
 
-func (c *SakuraServerConfig) GetPlanID() int64 {
-	planID, _ := strconv.ParseInt(fmt.Sprintf("%d%03d", c.MemorySize, c.Core), 10, 64)
-	return planID
+func (c *SakuraServerConfig) GetPlanID() string {
+	return fmt.Sprintf("%d%03d", c.MemorySize, c.Core)
 }
 
 func (c *SakuraServerConfig) IsDiskNameDefault() bool {
@@ -113,10 +111,10 @@ var Options = &option.List{
 				Usage:  "sakuracloud region name[tk1a/is1a/is1b/tk1v]",
 				Value:  defaultRegion,
 			},
-			CandidateFunc: func(c *api.Client) []string {
+			CandidateFunc: func(c *api.APIClient) []string {
 				return []string{"is1a", "is1b", "tk1a"}
 			},
-			UsageStringsFunc: func(c *api.Client) string {
+			UsageStringsFunc: func(c *api.APIClient) string {
 				return "[is1a / isab / tk1a]"
 			},
 		},
@@ -200,10 +198,10 @@ var Options = &option.List{
 				Usage:  "sakuracloud disk plan[HDD(2)/SSD(4)]",
 				Value:  defaultDiskPlan,
 			},
-			CandidateFunc: func(c *api.Client) []string {
+			CandidateFunc: func(c *api.APIClient) []string {
 				return []string{"2", "4"}
 			},
-			UsageStringsFunc: func(c *api.Client) string {
+			UsageStringsFunc: func(c *api.APIClient) string {
 				return "[2(HDD) / 4(SSD)]"
 			}},
 		option.Option{
@@ -235,10 +233,10 @@ var Options = &option.List{
 				Usage:  "sakuracloud disk connection[virtio/ide]",
 				Value:  defaultDiskConnection,
 			},
-			CandidateFunc: func(c *api.Client) []string {
+			CandidateFunc: func(c *api.APIClient) []string {
 				return []string{"virtio", "ide"}
 			},
-			UsageStringsFunc: func(c *api.Client) string {
+			UsageStringsFunc: func(c *api.APIClient) string {
 				return "[virtio / ide]"
 			},
 		},
@@ -256,10 +254,10 @@ var Options = &option.List{
 				Usage:  "sakuracloud @group tag [a/b/c/d]",
 				Value:  defaultGroup,
 			},
-			CandidateFunc: func(c *api.Client) []string {
+			CandidateFunc: func(c *api.APIClient) []string {
 				return []string{"a", "b", "c", "d"}
 			},
-			UsageStringsFunc: func(c *api.Client) string {
+			UsageStringsFunc: func(c *api.APIClient) string {
 				return "[ a / b / c / d ]"
 			},
 		},
@@ -284,10 +282,10 @@ var Options = &option.List{
 				Usage:  "sakuracloud packet-filter for eth0(shared)[filter ID or NAME]",
 				Value:  defaultPacketFilter,
 			},
-			// CandidateFunc: func(c *api.Client) []string {
+			// CandidateFunc: func(c *api.APIClient) []string {
 			// 	return []string{"is1a", "is1b", "tk1a"}
 			// },
-			// UsageStringsFunc: func(c *api.Client) string {
+			// UsageStringsFunc: func(c *api.APIClient) string {
 			// 	return "[is1a / isab / tk1a]"
 			// },
 		},
@@ -298,10 +296,10 @@ var Options = &option.List{
 				Usage:  "sakuracloud packet-filter for eth1(private)[filter ID or NAME]",
 				Value:  defaultPacketFilter,
 			},
-			// CandidateFunc: func(c *api.Client) []string {
+			// CandidateFunc: func(c *api.APIClient) []string {
 			// 	return []string{"is1a", "is1b", "tk1a"}
 			// },
-			// UsageStringsFunc: func(c *api.Client) string {
+			// UsageStringsFunc: func(c *api.APIClient) string {
 			// 	return "[is1a / isab / tk1a]"
 			// },
 		},

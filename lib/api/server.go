@@ -1,48 +1,68 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
-	sakura "github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cloud/resources"
+	"github.com/yamamoto-febc/libsacloud/sacloud"
+	"regexp"
 )
 
-// Create create server
-func (c *Client) Create(spec *sakura.Server, addIPAddress string) (*sakura.Response, error) {
-	var (
-		method = "POST"
-		uri    = "server"
-		body   = sakura.Request{Server: spec}
-	)
+// State get server state
+func (c *APIClient) State(id string) (string, error) {
+	server, err := c.client.Server.Read(id)
+	if err != nil {
+		return "", err
+	}
+	return server.Instance.Status, nil
+}
 
-	data, err := c.newRequest(method, uri, body)
+// PowerOn power on
+func (c *APIClient) PowerOn(id string) error {
+	_, err := c.client.Server.Boot(id)
+	return err
+}
+
+// PowerOff power off
+func (c *APIClient) PowerOff(id string) error {
+	_, err := c.client.Server.Shutdown(id)
+	return err
+}
+
+// GetIP get public ip address
+func (c *APIClient) GetIP(id string, privateIPOnly bool) (string, error) {
+
+	server, err := c.client.Server.Read(id)
+	if err != nil {
+		return "", err
+	}
+
+	if privateIPOnly && len(server.Interfaces) > 1 {
+		return server.Interfaces[1].UserIPAddress, nil
+	}
+
+	return server.Interfaces[0].IPAddress, nil
+}
+
+// Create create server
+func (c *APIClient) Create(spec *sacloud.Server, addIPAddress string) (*sacloud.Server, error) {
+
+	server, err := c.client.Server.Create(spec)
 	if err != nil {
 		return nil, err
 	}
 
-	var res sakura.Response
-	if err := json.Unmarshal(data, &res); err != nil {
-		return nil, err
-	}
-
-	if addIPAddress != "" && len(res.Server.Interfaces) > 1 {
-		if err := c.updateIPAddress(spec, res, addIPAddress); err != nil {
+	if addIPAddress != "" && len(server.Interfaces) > 1 {
+		if err := c.updateIPAddress(&server.Interfaces[1], addIPAddress); err != nil {
 			return nil, err
 		}
 	}
 
-	return &res, nil
+	return server, nil
 }
 
-func (c *Client) updateIPAddress(spec *sakura.Server, statusRes sakura.Response, ip string) error {
-	var (
-		method = "PUT"
-		uri    = fmt.Sprintf("interface/%s", statusRes.Server.Interfaces[1].ID)
-		body   = sakura.Request{
-			Interface: &sakura.Interface{UserIPAddress: ip},
-		}
-	)
+func (c *APIClient) updateIPAddress(nic *sacloud.Interface, ip string) error {
+	nic.UserIPAddress = ip
+	_, err := c.client.Interface.Update(nic.ID, nic)
 
-	_, err := c.newRequest(method, uri, body)
 	if err != nil {
 		return err
 	}
@@ -52,84 +72,69 @@ func (c *Client) updateIPAddress(spec *sakura.Server, statusRes sakura.Response,
 }
 
 // Delete delete server
-func (c *Client) Delete(id string, disks []string) error {
-	var (
-		method = "DELETE"
-		uri    = fmt.Sprintf("%s/%s", "server", id)
-	)
+func (c *APIClient) Delete(id string, disks []string) error {
+	_, err := c.client.Server.DeleteWithDisk(id, disks)
+	return err
+}
 
-	_, err := c.newRequest(method, uri, map[string]interface{}{"WithDisk": disks})
-	if err != nil {
-		return err
+// ConnectPacketFilterToSharedNIC connect packet filter to eth0(shared)
+func (c *APIClient) ConnectPacketFilterToSharedNIC(server *sacloud.Server, idOrNameFilter string) error {
+	if server.Interfaces != nil && len(server.Interfaces) > 0 {
+		return c.connectPacketFilter(&server.Interfaces[0], idOrNameFilter)
 	}
 	return nil
 }
 
-// State get server state
-func (c *Client) State(id string) (string, error) {
-	var (
-		method = "GET"
-		uri    = fmt.Sprintf("%s/%s", "server", id)
-	)
-
-	data, err := c.newRequest(method, uri, nil)
-	if err != nil {
-		return "", err
-	}
-	var s sakura.Response
-	if err := json.Unmarshal(data, &s); err != nil {
-		return "", err
-	}
-	return s.Server.Instance.Status, nil
-}
-
-// PowerOn power on
-func (c *Client) PowerOn(id string) error {
-	var (
-		method = "PUT"
-		uri    = fmt.Sprintf("%s/%s/power", "server", id)
-	)
-
-	_, err := c.newRequest(method, uri, nil)
-	if err != nil {
-		return err
+// ConnectPacketFilterToPrivateNIC connect packet filter to eth1(private)
+func (c *APIClient) ConnectPacketFilterToPrivateNIC(server *sacloud.Server, idOrNameFilter string) error {
+	if server.Interfaces != nil && len(server.Interfaces) > 1 {
+		return c.connectPacketFilter(&server.Interfaces[1], idOrNameFilter)
 	}
 	return nil
 }
 
-// PowerOff power off
-func (c *Client) PowerOff(id string) error {
-	var (
-		method = "DELETE"
-		uri    = fmt.Sprintf("%s/%s/power", "server", id)
-	)
+// ConnectPacketFilter connect filter to nic
+func (c *APIClient) connectPacketFilter(nic *sacloud.Interface, idOrNameFilter string) error {
+	if idOrNameFilter == "" {
+		return nil
+	}
 
-	_, err := c.newRequest(method, uri, nil)
+	var id string
+	//id or name ?
+	if match, _ := regexp.MatchString(`^[0-9]+$`, idOrNameFilter); match {
+		//IDでの検索
+		p, err := c.client.PacketFilter.Read(idOrNameFilter)
+		if err != nil {
+			return err
+		}
+		id = p.ID
+	}
+
+	//search
+	if id == "" {
+
+		res, err := c.client.PacketFilter.WithNameLike(idOrNameFilter).Limit(1).Find()
+
+		if err != nil {
+			return err
+		}
+
+		if res.Count > 0 {
+			id = res.PacketFilters[0].ID
+		} else {
+			return fmt.Errorf("PacketFilter [%s](name):Not Found", idOrNameFilter)
+		}
+	}
+
+	// not found
+	if id == "" {
+		return nil
+	}
+
+	//connect
+	_, err := c.client.Interface.ConnectToPacketFilter(nic.ID, id)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-// GetIP get public ip address
-func (c *Client) GetIP(id string, privateIPOnly bool) (string, error) {
-	var (
-		method = "GET"
-		uri    = fmt.Sprintf("%s/%s", "server", id)
-	)
-
-	data, err := c.newRequest(method, uri, nil)
-	if err != nil {
-		return "", err
-	}
-	var s sakura.Response
-	if err := json.Unmarshal(data, &s); err != nil {
-		return "", err
-	}
-
-	if privateIPOnly && len(s.Server.Interfaces) > 1 {
-		return s.Server.Interfaces[1].UserIPAddress, nil
-	}
-
-	return s.Server.Interfaces[0].IPAddress, nil
 }
