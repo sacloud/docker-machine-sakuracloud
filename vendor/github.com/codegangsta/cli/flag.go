@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -30,13 +29,13 @@ var HelpFlag = BoolFlag{
 }
 
 // Flag is a common interface related to parsing flags in cli.
-// For more advanced flag parsing techniques, it is recommended that
+// For more advanced flag parsing techniques, it is recomended that
 // this interface be implemented.
 type Flag interface {
 	fmt.Stringer
 	// Apply Flag settings to the given flag set
 	Apply(*flag.FlagSet)
-	GetName() string
+	getName() string
 }
 
 func flagSet(name string, flags []Flag) *flag.FlagSet {
@@ -74,18 +73,7 @@ type GenericFlag struct {
 // help text to the user (uses the String() method of the generic flag to show
 // the value)
 func (f GenericFlag) String() string {
-	return withEnvHint(f.EnvVar, fmt.Sprintf("%s %v\t%v", prefixedNames(f.Name), f.FormatValueHelp(), f.Usage))
-}
-
-func (f GenericFlag) FormatValueHelp() string {
-	if f.Value == nil {
-		return ""
-	}
-	s := f.Value.String()
-	if len(s) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("\"%s\"", s)
+	return withEnvHint(f.EnvVar, fmt.Sprintf("%s%s \"%v\"\t%v", prefixFor(f.Name), f.Name, f.Value, f.Usage))
 }
 
 // Apply takes the flagset and calls Set on the generic flag with the value
@@ -107,7 +95,7 @@ func (f GenericFlag) Apply(set *flag.FlagSet) {
 	})
 }
 
-func (f GenericFlag) GetName() string {
+func (f GenericFlag) getName() string {
 	return f.Name
 }
 
@@ -171,7 +159,7 @@ func (f StringSliceFlag) Apply(set *flag.FlagSet) {
 	})
 }
 
-func (f StringSliceFlag) GetName() string {
+func (f StringSliceFlag) getName() string {
 	return f.Name
 }
 
@@ -243,7 +231,7 @@ func (f IntSliceFlag) Apply(set *flag.FlagSet) {
 	})
 }
 
-func (f IntSliceFlag) GetName() string {
+func (f IntSliceFlag) getName() string {
 	return f.Name
 }
 
@@ -285,7 +273,7 @@ func (f BoolFlag) Apply(set *flag.FlagSet) {
 	})
 }
 
-func (f BoolFlag) GetName() string {
+func (f BoolFlag) getName() string {
 	return f.Name
 }
 
@@ -328,7 +316,7 @@ func (f BoolTFlag) Apply(set *flag.FlagSet) {
 	})
 }
 
-func (f BoolTFlag) GetName() string {
+func (f BoolTFlag) getName() string {
 	return f.Name
 }
 
@@ -343,15 +331,16 @@ type StringFlag struct {
 
 // String returns the usage
 func (f StringFlag) String() string {
-	return withEnvHint(f.EnvVar, fmt.Sprintf("%s %v\t%v", prefixedNames(f.Name), f.FormatValueHelp(), f.Usage))
-}
+	var fmtString string
+	fmtString = "%s %v\t%v"
 
-func (f StringFlag) FormatValueHelp() string {
-	s := f.Value
-	if len(s) == 0 {
-		return ""
+	if len(f.Value) > 0 {
+		fmtString = "%s \"%v\"\t%v"
+	} else {
+		fmtString = "%s %v\t%v"
 	}
-	return fmt.Sprintf("\"%s\"", s)
+
+	return withEnvHint(f.EnvVar, fmt.Sprintf(fmtString, prefixedNames(f.Name), f.Value, f.Usage))
 }
 
 // Apply populates the flag given the flag set and environment
@@ -375,7 +364,7 @@ func (f StringFlag) Apply(set *flag.FlagSet) {
 	})
 }
 
-func (f StringFlag) GetName() string {
+func (f StringFlag) getName() string {
 	return f.Name
 }
 
@@ -418,7 +407,7 @@ func (f IntFlag) Apply(set *flag.FlagSet) {
 	})
 }
 
-func (f IntFlag) GetName() string {
+func (f IntFlag) getName() string {
 	return f.Name
 }
 
@@ -461,7 +450,7 @@ func (f DurationFlag) Apply(set *flag.FlagSet) {
 	})
 }
 
-func (f DurationFlag) GetName() string {
+func (f DurationFlag) getName() string {
 	return f.Name
 }
 
@@ -503,7 +492,7 @@ func (f Float64Flag) Apply(set *flag.FlagSet) {
 	})
 }
 
-func (f Float64Flag) GetName() string {
+func (f Float64Flag) getName() string {
 	return f.Name
 }
 
@@ -532,15 +521,7 @@ func prefixedNames(fullName string) (prefixed string) {
 func withEnvHint(envVar, str string) string {
 	envText := ""
 	if envVar != "" {
-		prefix := "$"
-		suffix := ""
-		sep := ", $"
-		if runtime.GOOS == "windows" {
-			prefix = "%"
-			suffix = "%"
-			sep = "%, %"
-		}
-		envText = fmt.Sprintf(" [%s%s%s]", prefix, strings.Join(strings.Split(envVar, ","), sep), suffix)
+		envText = fmt.Sprintf(" [$%s]", strings.Join(strings.Split(envVar, ","), ", $"))
 	}
 	return str + envText
 }

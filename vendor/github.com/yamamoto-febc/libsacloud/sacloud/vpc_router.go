@@ -15,16 +15,6 @@ type VPCRouterSettings struct {
 	Router *VPCRouterSetting `json:",omitempty"`
 }
 
-type VPCRouterSetting struct {
-	Interfaces []*VPCRouterInterface `json:",omitempty"`
-	VRID       int                   `json:",omitempty"`
-}
-type VPCRouterInterface struct {
-	IPAddress        []string `json:",omitempty"`
-	NetworkMaskLen   int      `json:",omitempty"`
-	VirtualIPAddress string   `json:",omitempty"`
-}
-
 func CreateNewVPCRouter() *VPCRouter {
 	return &VPCRouter{
 		Appliance: &Appliance{
@@ -37,7 +27,38 @@ func CreateNewVPCRouter() *VPCRouter {
 				Switch:  &ApplianceRemarkSwitch{},
 			},
 		},
+		Settings: &VPCRouterSettings{
+			Router: &VPCRouterSetting{},
+		},
 	}
+}
+
+func (v *VPCRouter) InitVPCRouterSetting() {
+	settings := &VPCRouterSettings{
+		Router: &VPCRouterSetting{},
+	}
+
+	if v.Settings != nil && v.Settings.Router != nil && v.Settings.Router.Interfaces != nil {
+		settings.Router.Interfaces = v.Settings.Router.Interfaces
+	}
+	if v.Settings != nil && v.Settings.Router != nil && v.Settings.Router.VRID != nil {
+		settings.Router.VRID = v.Settings.Router.VRID
+	}
+
+	v.Settings = settings
+}
+
+func (v *VPCRouter) IsStandardPlan() bool {
+	id, _ := v.Plan.ID.Int64()
+	return id == 1
+}
+func (v *VPCRouter) IsPremiumPlan() bool {
+	id, _ := v.Plan.ID.Int64()
+	return id == 2
+}
+func (v *VPCRouter) IsHighSpecPlan() bool {
+	id, _ := v.Plan.ID.Int64()
+	return id == 3
 }
 
 func (v *VPCRouter) SetStandardPlan() {
@@ -48,17 +69,17 @@ func (v *VPCRouter) SetStandardPlan() {
 	v.Settings = nil
 }
 
-func (v *VPCRouter) SetPremiumPlan(switchID string, virtualIPAddress string, ipAddress1 string, ipAddress2 string, vrid int, networkMaskLen int) {
+func (v *VPCRouter) SetPremiumPlan(switchID string, virtualIPAddress string, ipAddress1 string, ipAddress2 string, vrid int, ipAliases []string) {
 	v.Plan.SetIDByNumber(2)
-	v.setPremiumServices(switchID, virtualIPAddress, ipAddress1, ipAddress2, vrid, networkMaskLen)
+	v.setPremiumServices(switchID, virtualIPAddress, ipAddress1, ipAddress2, vrid, ipAliases)
 }
 
-func (v *VPCRouter) SetHighSpecPlan(switchID string, virtualIPAddress string, ipAddress1 string, ipAddress2 string, vrid int, networkMaskLen int) {
+func (v *VPCRouter) SetHighSpecPlan(switchID string, virtualIPAddress string, ipAddress1 string, ipAddress2 string, vrid int, ipAliases []string) {
 	v.Plan.SetIDByNumber(3)
-	v.setPremiumServices(switchID, virtualIPAddress, ipAddress1, ipAddress2, vrid, networkMaskLen)
+	v.setPremiumServices(switchID, virtualIPAddress, ipAddress1, ipAddress2, vrid, ipAliases)
 }
 
-func (v *VPCRouter) setPremiumServices(switchID string, virtualIPAddress string, ipAddress1 string, ipAddress2 string, vrid int, networkMaskLen int) {
+func (v *VPCRouter) setPremiumServices(switchID string, virtualIPAddress string, ipAddress1 string, ipAddress2 string, vrid int, ipAliases []string) {
 	v.Remark.Switch = &ApplianceRemarkSwitch{
 		ID: switchID,
 	}
@@ -76,10 +97,10 @@ func (v *VPCRouter) setPremiumServices(switchID string, virtualIPAddress string,
 						ipAddress2,
 					},
 					VirtualIPAddress: virtualIPAddress,
-					NetworkMaskLen:   networkMaskLen,
+					IPAliases:        ipAliases,
 				},
 			},
-			VRID: vrid,
+			VRID: &vrid,
 		},
 	}
 
