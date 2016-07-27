@@ -16,63 +16,67 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-235-gbc465be",
-			"Rev": "bc465becccd1d527002fda095fc3c19d9c115029"
+			"Comment": "1.2.0-179-g0302d39",
+			"Rev": "0302d3914d2a6ad61404584cdae6e6dbc9c03599"
+		},
+		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/term",
-			"Comment": "v1.4.1-11583-g7268eb9",
-			"Rev": "7268eb97bc208f4cdf7c9119da0cfa2c9ed558a4"
+			"Comment": "v1.5.0",
+			"Rev": "a8a31eff10544860d2188dddabdee4d727545796"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/commands/mcndirs",
-			"Comment": "v0.8.0-rc1",
-			"Rev": "fffa6c9a8482c8432de955392542b99cf6495f9c"
+			"Comment": "v0.8.0",
+			"Rev": "b85aac15463faf0e69f41d757291db9ab4c056f3"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/drivers",
-			"Comment": "v0.8.0-rc1",
-			"Rev": "fffa6c9a8482c8432de955392542b99cf6495f9c"
+			"Comment": "v0.8.0",
+			"Rev": "b85aac15463faf0e69f41d757291db9ab4c056f3"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/engine",
-			"Comment": "v0.8.0-rc1",
-			"Rev": "fffa6c9a8482c8432de955392542b99cf6495f9c"
+			"Comment": "v0.8.0",
+			"Rev": "b85aac15463faf0e69f41d757291db9ab4c056f3"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/log",
-			"Comment": "v0.8.0-rc1",
-			"Rev": "fffa6c9a8482c8432de955392542b99cf6495f9c"
+			"Comment": "v0.8.0",
+			"Rev": "b85aac15463faf0e69f41d757291db9ab4c056f3"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/mcnflag",
-			"Comment": "v0.8.0-rc1",
-			"Rev": "fffa6c9a8482c8432de955392542b99cf6495f9c"
+			"Comment": "v0.8.0",
+			"Rev": "b85aac15463faf0e69f41d757291db9ab4c056f3"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/mcnutils",
-			"Comment": "v0.8.0-rc1",
-			"Rev": "fffa6c9a8482c8432de955392542b99cf6495f9c"
+			"Comment": "v0.8.0",
+			"Rev": "b85aac15463faf0e69f41d757291db9ab4c056f3"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/ssh",
-			"Comment": "v0.8.0-rc1",
-			"Rev": "fffa6c9a8482c8432de955392542b99cf6495f9c"
+			"Comment": "v0.8.0",
+			"Rev": "b85aac15463faf0e69f41d757291db9ab4c056f3"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/state",
-			"Comment": "v0.8.0-rc1",
-			"Rev": "fffa6c9a8482c8432de955392542b99cf6495f9c"
+			"Comment": "v0.8.0",
+			"Rev": "b85aac15463faf0e69f41d757291db9ab4c056f3"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/libmachine/version",
-			"Comment": "v0.8.0-rc1",
-			"Rev": "fffa6c9a8482c8432de955392542b99cf6495f9c"
+			"Comment": "v0.8.0",
+			"Rev": "b85aac15463faf0e69f41d757291db9ab4c056f3"
 		},
 		{
 			"ImportPath": "github.com/docker/machine/version",
-			"Comment": "v0.8.0-rc1",
-			"Rev": "fffa6c9a8482c8432de955392542b99cf6495f9c"
+			"Comment": "v0.8.0",
+			"Rev": "b85aac15463faf0e69f41d757291db9ab4c056f3"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-runewidth",
@@ -84,26 +88,31 @@
 			"Rev": "cca8bbc0798408af109aaaa239cbd2634846b340"
 		},
 		{
+			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
+		},
+		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Rev": "e4ec8152c15fc46bd5056ce65997a07c7d415325"
+			"Comment": "v1.1.3-4-g1f4a164",
+			"Rev": "1f4a1643a57e798696635ea4c126e9127adb7d3c"
 		},
 		{
 			"ImportPath": "github.com/yamamoto-febc/libsacloud/api",
-			"Comment": "v0.0.1-36-g8874fff",
-			"Rev": "8874fff08c8180d1de2c9a816fdc1ea02a59298e"
+			"Comment": "v0.0.1-62-ge1d2569",
+			"Rev": "e1d2569e0d8e25bb097545ff4e07879887957ebf"
 		},
 		{
 			"ImportPath": "github.com/yamamoto-febc/libsacloud/sacloud",
-			"Comment": "v0.0.1-36-g8874fff",
-			"Rev": "8874fff08c8180d1de2c9a816fdc1ea02a59298e"
+			"Comment": "v0.0.1-62-ge1d2569",
+			"Rev": "e1d2569e0d8e25bb097545ff4e07879887957ebf"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/curve25519",
-			"Rev": "47ff8dfbc528fea3003fc0ce2d88ffbbfbc46a43"
+			"Rev": "beef0f4390813b96e8e68fd78570396d0f4751fc"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",
-			"Rev": "47ff8dfbc528fea3003fc0ce2d88ffbbfbc46a43"
+			"Rev": "beef0f4390813b96e8e68fd78570396d0f4751fc"
 		}
 	]
 }
