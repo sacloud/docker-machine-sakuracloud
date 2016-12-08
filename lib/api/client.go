@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	sakuraCloudPublicImageSearchWords = "Ubuntu Server 16.04 LTS 64bit"
+	sakuraCloudPublicImageSearchWords = "Ubuntu Server 16.04"
 )
 
 type APIClient struct {
