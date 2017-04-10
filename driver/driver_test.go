@@ -8,7 +8,6 @@ import (
 	"github.com/docker/machine/commands/mcndirs"
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/stretchr/testify/assert"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cli"
 )
 
 const (
@@ -111,28 +110,4 @@ func TestSetConfigFromFlags(t *testing.T) {
 
 	//assert.NoError(t, err)
 	assert.Empty(t, checkFlags.InvalidFlags)
-}
-
-func TestSetConfigFromFlagsWithConfigFile(t *testing.T) {
-	driver := NewDriver("default", "path")
-
-	checkFlags := &drivers.CheckDriverOptions{
-		FlagsValues: map[string]interface{}{
-			"sakuracloud-access-token":        "token",
-			"sakuracloud-access-token-secret": "secret",
-		},
-		CreateFlags: driver.GetCreateFlags(),
-	}
-
-	client := cli.NewClient()
-	client.SetConfigValue("region", "tk1a")
-	defer os.RemoveAll(client.GetDriversDir())
-
-	driver.SetConfigFromFlags(checkFlags)
-
-	//assert.NoError(t, err)
-	assert.Empty(t, checkFlags.InvalidFlags)
-
-	//drv := driver.(*Driver)
-	//assert.Equal(t, drv.Client.Region, "tk1a")
 }

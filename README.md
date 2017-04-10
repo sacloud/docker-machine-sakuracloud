@@ -151,14 +151,6 @@ Sandboxリージョンについては外部からログインができないた�
 | `--sakuracloud-region`              | `SAKURACLOUD_REGION`              | `is1b`                   |
 | `--sakuracloud-ssh-key`   | `SAKURACLOUD_SSH_KEY`  | -                 |
 
-## スタンドアロンモード
-
-`docker-machine-driver-sakuracloud`バイナリを直接実行することでスタンドアロンモードで起動します。
-
-このモードでは、`docker-machine create`コマンドで指定するオプションをあらかじめ指定/保持しておくことができます。
-
-詳細は[Wikiページ](https://github.com/yamamoto-febc/docker-machine-sakuracloud/wiki/Standalone-Mode)を参照してください。
-
 ## Author
 
 * Kazumichi Yamamoto ([@yamamoto-febc](https://github.com/yamamoto-febc))
