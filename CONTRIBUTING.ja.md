@@ -48,8 +48,6 @@ GOPATHの設定、ソースの取得、依存ライブラリのインストー�
     $ export GOPATH="$PWD"
     $ go get github.com/yamamoto-febc/docker-machine-sakuracloud
     $ cd src/github.com/yamamoto-febc/docker-machine-sakuracloud
-    $ go get github.com/tools/godep
-    $ $GOPATH/bin/godep get
 ```
 
 環境設定ができたら以下コマンドを実行します。
@@ -82,12 +80,3 @@ OS/CPUアーキテクチャを指定する場合、以下のようにします�
     VERBOSE=true # verbose output
     PREFIX=folder # put binaries in another folder (not the default `./bin`)
 
-### Go依存ライブラリの保存/復元
-
-以下コマンドにてgodepを用いたGo依存ライブラリの管理が可能です。
-
-    make dep-save
-    make dep-restore
-
-*makeを通じてgodepを実行すると`GO15VENDOREXPERIMENT`環境変数が設定されます。
-これにより`vendor`ディレクトリ配下に依存ライブラリがインストールされます*

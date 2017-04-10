@@ -17,10 +17,10 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/sacloud/libsacloud/sacloud"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/api"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cli"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/spec"
-	"github.com/yamamoto-febc/libsacloud/sacloud"
 )
 
 // Driver sakuracloud driver
@@ -273,7 +273,7 @@ func (d *Driver) Create() error {
 	if err != nil {
 		return fmt.Errorf("Error creating host: %v", err)
 	}
-	id := serverResponse.ID
+	id := fmt.Sprintf("%d", serverResponse.ID)
 	log.Infof("Created Server ID: %s", id)
 	d.ID = id
 
@@ -487,11 +487,10 @@ func (d *Driver) buildSakuraServerSpec() *sacloud.Server {
 		tags = append(tags, "@auto-reboot")
 	}
 
-	spec := &sacloud.Server{
-		Name:        d.serverConfig.HostName,
-		Description: "",
-		Tags:        tags[:],
-	}
+	spec := d.Client.NewServer()
+	spec.Name = d.serverConfig.HostName
+	spec.Description = ""
+	spec.Tags = tags[:]
 	spec.SetServerPlanByID(d.serverConfig.GetPlanID())
 	spec.AddPublicNWConnectedParam()
 	if d.serverConfig.ConnectedSwitch != "" {
@@ -504,13 +503,14 @@ func (d *Driver) buildSakuraServerSpec() *sacloud.Server {
 	return spec
 }
 func (d *Driver) buildSakuraDiskSpec() *sacloud.Disk {
-	spec := &sacloud.Disk{
-		Name:       d.serverConfig.DiskName,
-		SizeMB:     d.serverConfig.DiskSize,
-		Connection: sacloud.EDiskConnection(d.serverConfig.DiskConnection),
-	}
 
-	spec.SetSourceArchive(d.serverConfig.DiskSourceArchiveID)
+	spec := d.Client.NewDisk()
+	spec.Name = d.serverConfig.DiskName
+	spec.SizeMB = d.serverConfig.DiskSize
+	spec.Connection = sacloud.EDiskConnection(d.serverConfig.DiskConnection)
+
+	archiveID, _ := api.ToSakuraID(d.serverConfig.DiskSourceArchiveID)
+	spec.SetSourceArchive(archiveID)
 	if d.serverConfig.DiskPlan == "2" {
 		spec.SetDiskPlanToHDD()
 	} else {
@@ -524,7 +524,8 @@ func (d *Driver) buildSakuraDiskSpec() *sacloud.Disk {
 func (d *Driver) buildSakuraDiskEditSpec(publicKey string, noteIDs []string) *sacloud.DiskEditValue {
 	notes := make([]*sacloud.Resource, len(noteIDs))
 	for n := range noteIDs {
-		notes[n] = &sacloud.Resource{ID: noteIDs[n]}
+		id, _ := api.ToSakuraID(noteIDs[n])
+		notes[n] = &sacloud.Resource{ID: id}
 	}
 
 	pAuth := !d.serverConfig.EnablePWAuth

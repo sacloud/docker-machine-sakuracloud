@@ -2,12 +2,17 @@ package api
 
 import (
 	"fmt"
-	"github.com/yamamoto-febc/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/sacloud"
 	"regexp"
 )
 
 // State get server state
-func (c *APIClient) State(id string) (string, error) {
+func (c *APIClient) State(strId string) (string, error) {
+	id, res := ToSakuraID(strId)
+	if !res {
+		return "", fmt.Errorf("ServerID is invalid: %s", strId)
+	}
+
 	server, err := c.client.Server.Read(id)
 	if err != nil {
 		return "", err
@@ -16,20 +21,32 @@ func (c *APIClient) State(id string) (string, error) {
 }
 
 // PowerOn power on
-func (c *APIClient) PowerOn(id string) error {
+func (c *APIClient) PowerOn(strId string) error {
+	id, res := ToSakuraID(strId)
+	if !res {
+		return fmt.Errorf("ServerID is invalid: %s", strId)
+	}
+
 	_, err := c.client.Server.Boot(id)
 	return err
 }
 
 // PowerOff power off
-func (c *APIClient) PowerOff(id string) error {
+func (c *APIClient) PowerOff(strId string) error {
+	id, res := ToSakuraID(strId)
+	if !res {
+		return fmt.Errorf("ServerID is invalid: %s", strId)
+	}
 	_, err := c.client.Server.Shutdown(id)
 	return err
 }
 
 // GetIP get public ip address
-func (c *APIClient) GetIP(id string, privateIPOnly bool) (string, error) {
-
+func (c *APIClient) GetIP(strId string, privateIPOnly bool) (string, error) {
+	id, res := ToSakuraID(strId)
+	if !res {
+		return "", fmt.Errorf("ServerID is invalid: %s", strId)
+	}
 	server, err := c.client.Server.Read(id)
 	if err != nil {
 		return "", err
@@ -72,7 +89,17 @@ func (c *APIClient) updateIPAddress(nic *sacloud.Interface, ip string) error {
 }
 
 // Delete delete server
-func (c *APIClient) Delete(id string, disks []string) error {
+func (c *APIClient) Delete(strId string, strDisks []string) error {
+	id, res := ToSakuraID(strId)
+	if !res {
+		return fmt.Errorf("ServerID is invalid: %s", strId)
+	}
+
+	disks, res := ToSakuraIDAll(strDisks)
+	if !res {
+		return fmt.Errorf("DiskIDs are invalid: %#v", strDisks)
+	}
+
 	_, err := c.client.Server.DeleteWithDisk(id, disks)
 	return err
 }
@@ -99,11 +126,12 @@ func (c *APIClient) connectPacketFilter(nic *sacloud.Interface, idOrNameFilter s
 		return nil
 	}
 
-	var id string
+	var id int64
 	//id or name ?
 	if match, _ := regexp.MatchString(`^[0-9]+$`, idOrNameFilter); match {
 		//IDでの検索
-		p, err := c.client.PacketFilter.Read(idOrNameFilter)
+		intId, _ := ToSakuraID(idOrNameFilter)
+		p, err := c.client.PacketFilter.Read(intId)
 		if err != nil {
 			return err
 		}
@@ -111,7 +139,7 @@ func (c *APIClient) connectPacketFilter(nic *sacloud.Interface, idOrNameFilter s
 	}
 
 	//search
-	if id == "" {
+	if id == 0 {
 
 		res, err := c.client.PacketFilter.WithNameLike(idOrNameFilter).Limit(1).Find()
 
@@ -127,7 +155,7 @@ func (c *APIClient) connectPacketFilter(nic *sacloud.Interface, idOrNameFilter s
 	}
 
 	// not found
-	if id == "" {
+	if id == 0 {
 		return nil
 	}
 
