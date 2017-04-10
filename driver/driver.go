@@ -19,7 +19,6 @@ import (
 	"github.com/docker/machine/libmachine/state"
 	"github.com/sacloud/libsacloud/sacloud"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/api"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/cli"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/spec"
 )
 
@@ -38,7 +37,7 @@ type Driver struct {
 
 // GetCreateFlags create flags
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
-	return spec.Options.McnFlags()
+	return spec.McnFlags
 }
 
 // NewDriver create driver instance
@@ -85,10 +84,7 @@ func validateSakuraServerConfig(c *api.APIClient, config *spec.SakuraServerConfi
 }
 
 // SetConfigFromFlags create config values from flags
-func (d *Driver) SetConfigFromFlags(srcFlags drivers.DriverOptions) error {
-	cliClient := cli.NewClient()
-	flags := cliClient.GetDriverOptions(srcFlags)
-
+func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.Client = api.NewAPIClient(
 		flags.String("sakuracloud-access-token"),
 		flags.String("sakuracloud-access-token-secret"),

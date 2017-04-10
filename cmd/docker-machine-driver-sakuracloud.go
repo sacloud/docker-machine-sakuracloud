@@ -6,8 +6,6 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine/drivers/plugin"
-	"github.com/docker/machine/libmachine/log"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/commands"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/driver"
 	"github.com/yamamoto-febc/docker-machine-sakuracloud/version"
 )
@@ -21,13 +19,6 @@ Version: {{.Version}}{{if or .Author .Email}}
 Author:{{if .Author}}
   {{.Author}}{{if .Email}} - <{{.Email}}>{{end}}{{else}}
   {{.Email}}{{end}}{{end}}
-{{if .Flags}}
-Options:
-  {{range .Flags}}{{.}}
-  {{end}}{{end}}
-Commands:
-  {{range .Commands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Usage}}
-  {{end}}
 `
 
 func main() {
@@ -42,20 +33,5 @@ func main() {
 	app.Action = func(c *cli.Context) {
 		plugin.RegisterDriver(driver.NewDriver("", ""))
 	}
-	app.CommandNotFound = cmdNotFound
-	app.Commands = commands.Commands
-	app.Flags = commands.Flags
-	app.EnableBashCompletion = true
 	app.Run(os.Args)
-}
-
-func cmdNotFound(c *cli.Context, command string) {
-	log.Errorf(
-		"%s: '%s' is not a %s command. See '%s --help'.",
-		c.App.Name,
-		command,
-		c.App.Name,
-		os.Args[0],
-	)
-	os.Exit(1)
 }
