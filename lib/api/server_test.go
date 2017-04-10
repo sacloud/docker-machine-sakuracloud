@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -20,11 +21,11 @@ func TestServerFuncs(t *testing.T) {
 	//err = client.ConnectPacketFilterToSharedNIC(server, "112800627722")
 	//assert.NoError(t, err)
 
-	ip, err := client.GetIP(server.ID, false)
+	ip, err := client.GetIP(fmt.Sprintf("%d", server.ID), false)
 	assert.NotEmpty(t, ip)
 	assert.NoError(t, err)
 
-	err = client.Delete(server.ID, []string{})
+	err = client.Delete(fmt.Sprintf("%d", server.ID), []string{})
 	assert.NoError(t, err)
 
 }

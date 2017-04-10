@@ -2,11 +2,10 @@ package api
 
 import (
 	"fmt"
-	"github.com/yamamoto-febc/libsacloud/api"
-)
-
-const (
-	sakuraCloudPublicImageSearchWords = "Ubuntu Server 16.04"
+	"github.com/sacloud/libsacloud/api"
+	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/sacloud/ostype"
+	"github.com/yamamoto-febc/docker-machine-sakuracloud/version"
 )
 
 type APIClient struct {
@@ -30,6 +29,7 @@ func NewAPIClient(token string, secret string, zone string) *APIClient {
 func (c *APIClient) Init() {
 	if !c.initialized {
 		c.client = api.NewClient(c.AccessToken, c.AccessTokenSecret, c.Region)
+		c.client.UserAgent = fmt.Sprintf("docker-machine-sakuracloud/%s", version.Version)
 	}
 }
 
@@ -49,22 +49,18 @@ func (c *APIClient) IsValidPlan(core int, memory int) (bool, error) {
 }
 
 func (c *APIClient) GetUbuntuArchiveID() (string, error) {
-
-	res, err := c.client.Archive.
-		WithNameLike(sakuraCloudPublicImageSearchWords).
-		WithSharedScope().
-		Include("ID").
-		Include("Name").
-		Find()
-
+	res, err := c.client.Archive.FindByOSType(ostype.Ubuntu)
 	if err != nil {
 		return "", err
 	}
+	return fmt.Sprintf("%d", res.ID), nil
 
-	//すでに登録されている場合
-	if res.Count > 0 {
-		return res.Archives[0].ID, nil
-	}
+}
 
-	return "", fmt.Errorf("Archive'%s' not found.", sakuraCloudPublicImageSearchWords)
+func (c *APIClient) NewServer() *sacloud.Server {
+	return c.client.Server.New()
+}
+
+func (c *APIClient) NewDisk() *sacloud.Disk {
+	return c.client.Disk.New()
 }

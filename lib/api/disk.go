@@ -1,7 +1,8 @@
 package api
 
 import (
-	"github.com/yamamoto-febc/libsacloud/sacloud"
+	"fmt"
+	"github.com/sacloud/libsacloud/sacloud"
 )
 
 // CreateDisk create disk
@@ -11,12 +12,16 @@ func (c *APIClient) CreateDisk(spec *sacloud.Disk) (string, error) {
 		return "", err
 	}
 
-	return disk.ID, nil
+	return fmt.Sprintf("%d", disk.ID), nil
 }
 
 // EditDisk edit disk
 func (c *APIClient) EditDisk(diskID string, spec *sacloud.DiskEditValue) (bool, error) {
-	_, err := c.client.Disk.Config(diskID, spec)
+	id, res := ToSakuraID(diskID)
+	if !res {
+		return false, fmt.Errorf("DiskID is invalid: %v", diskID)
+	}
+	_, err := c.client.Disk.Config(id, spec)
 	if err != nil {
 		return false, err
 	}
@@ -25,7 +30,17 @@ func (c *APIClient) EditDisk(diskID string, spec *sacloud.DiskEditValue) (bool, 
 
 // ConnectDisk connect disk
 func (c *APIClient) ConnectDisk(diskID string, serverID string) (bool, error) {
-	_, err := c.client.Disk.ConnectToServer(diskID, serverID)
+
+	dId, res := ToSakuraID(diskID)
+	if !res {
+		return false, fmt.Errorf("DiskID is invalid: %v", diskID)
+	}
+	sId, res := ToSakuraID(serverID)
+	if !res {
+		return false, fmt.Errorf("ServerID is invalid: %v", serverID)
+	}
+
+	_, err := c.client.Disk.ConnectToServer(dId, sId)
 	if err != nil {
 		return false, err
 	}
@@ -34,7 +49,11 @@ func (c *APIClient) ConnectDisk(diskID string, serverID string) (bool, error) {
 
 // DiskState get disk state
 func (c *APIClient) GetDiskByID(diskID string) (*sacloud.Disk, error) {
-	disk, err := c.client.Disk.Read(diskID)
+	id, res := ToSakuraID(diskID)
+	if !res {
+		return nil, fmt.Errorf("DiskID is invalid: %v", diskID)
+	}
+	disk, err := c.client.Disk.Read(id)
 	if err != nil {
 		return nil, err
 	}

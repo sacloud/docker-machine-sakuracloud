@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"github.com/yamamoto-febc/libsacloud/sacloud"
 	"time"
 )
 
@@ -83,30 +82,34 @@ func (c *APIClient) GetDisableEth0CustomizeNoteID(serverID string) (string, erro
 
 func (c *APIClient) getCustomizeNoteID(noteName string, noteBody string) (string, error) {
 
-	existsNotes, err := c.client.Note.WithNameLike(noteName).Limit(1).Find()
+	existsNotes, err := c.client.Note.Reset().WithNameLike(noteName).Limit(1).Find()
 
 	//すでに登録されている場合
 	if len(existsNotes.Notes) > 0 {
-		return existsNotes.Notes[0].ID, nil
+		return fmt.Sprintf("%d", existsNotes.Notes[0].ID), nil
 	}
 
 	//ない場合はここで作成する
-	note, err := c.client.Note.Create(
-		&sacloud.Note{
-			Name:    noteName,
-			Content: noteBody,
-		})
+	newNote := c.client.Note.New()
+	newNote.Name = noteName
+	newNote.Content = noteBody
 
+	note, err := c.client.Note.Create(newNote)
 	if err != nil {
 		return "", err
 	}
 
-	return note.ID, nil
+	return fmt.Sprintf("%d", note.ID), nil
 
 }
 
 // DeleteNote delete note
-func (c *APIClient) DeleteNote(id string) error {
+func (c *APIClient) DeleteNote(strId string) error {
+	id, res := ToSakuraID(strId)
+	if !res {
+		return fmt.Errorf("NoteID is invalid: %v", strId)
+	}
+
 	_, err := c.client.Note.Delete(id)
 	return err
 }

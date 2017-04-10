@@ -5,15 +5,9 @@ GO_GCFLAGS :=
 # Full package list
 PKGS := $(shell go list -tags "$(BUILDTAGS)" ./... | grep -v "/vendor/")
 
-# Support go1.5 vendoring (let us avoid messing with GOPATH or using godep)
-export GO15VENDOREXPERIMENT = 1
-
 # Resolving binary dependencies for specific targets
 GOLINT_BIN := $(GOPATH)/bin/golint
 GOLINT := $(shell [ -x $(GOLINT_BIN) ] && echo $(GOLINT_BIN) || echo '')
-
-GODEP_BIN := $(GOPATH)/bin/godep
-GODEP := $(shell [ -x $(GODEP_BIN) ] && echo $(GODEP_BIN) || echo '')
 
 GH_RELEASE := $(GOPATH)/bin/github-release
 

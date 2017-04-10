@@ -34,8 +34,6 @@ example of cloning and preparing the correct environment `GOPATH`:
     $ export GOPATH="$PWD"
     $ go get github.com/yamamoto-febc/docker-machine-sakuracloud
     $ cd src/github.com/yamamoto-febc/docker-machine-sakuracloud
-    $ go get github.com/tools/godep
-    $ $GOPATH/bin/godep get
 ```
 
 At this point, simply run:
