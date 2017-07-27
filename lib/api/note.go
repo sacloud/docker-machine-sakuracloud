@@ -24,6 +24,8 @@ exit 0`
 # @sacloud-require-archive distro-debian
 # @sacloud-require-archive distro-ubuntu
 export DEBIAN_FRONTEND=noninteractive
+sed -i '/auto eth1/d' /etc/network/interfaces
+sed -i '/iface eth1 inet manual/d' /etc/network/interfaces
 echo "auto eth1" >> /etc/network/interfaces
 echo "iface eth1 inet static" >> /etc/network/interfaces
 echo "address %s" >> /etc/network/interfaces

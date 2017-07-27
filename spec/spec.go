@@ -12,8 +12,8 @@ const (
 	defaultMemorySize          = 1      // デフォルトメモリサイズ
 	defaultConnectedSwitch     = ""     // 追加で接続するSwitchのID
 	defaultPrivateIPOnly       = false
-	defaultPrivateIP           = "" // 追加で接続するSwitch用NICのIP
-	defaultPrivateIPSubnetMask = "" // 追加で接続するSwitch用NICのIP
+	defaultPrivateIP           = ""              // 追加で接続するSwitch用NICのIP
+	defaultPrivateIPSubnetMask = "255.255.255.0" // 追加で接続するSwitch用NICのIP
 	defaultGateway             = ""
 	defaultDiskPlan            = "4"      // SSD
 	defaultDiskSize            = 20480    // 20GB
