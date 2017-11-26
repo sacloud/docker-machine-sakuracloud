@@ -4,85 +4,60 @@ import (
 	"fmt"
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/mcnflag"
+	"github.com/sacloud/libsacloud/sacloud"
 )
 
-const (
-	defaultRegion              = "is1b" // 石狩第１ゾーン
-	defaultCore                = 1      //デフォルトコア数
-	defaultMemorySize          = 1      // デフォルトメモリサイズ
-	defaultConnectedSwitch     = ""     // 追加で接続するSwitchのID
-	defaultPrivateIPOnly       = false
-	defaultPrivateIP           = ""              // 追加で接続するSwitch用NICのIP
-	defaultPrivateIPSubnetMask = "255.255.255.0" // 追加で接続するSwitch用NICのIP
-	defaultGateway             = ""
-	defaultDiskPlan            = "4"      // SSD
-	defaultDiskSize            = 20480    // 20GB
-	defaultDiskName            = ""       // ディスク名
-	defaultDiskConnection      = "virtio" // virtio
-	defaultGroup               = ""       // グループタグ
-	defaultAutoReboot          = false    // 自動再起動
-	defaultIgnoreVirtioNet     = false    // virtioNICの無効化
-	defaultPacketFilter        = ""
-	defaultPrivatePacketFilter = ""
-	defaultEnablePWAuth        = false
-	defaultDNSZone             = "" // DNSゾーン名
-	defaultGSLB                = "" // DNSゾーン名
+var (
+	defaultRegion          = "is1b"      // 石狩第2ゾーン
+	defaultOSType          = "rancheros" // OSタイプ
+	defaultCore            = 1           // デフォルトコア数
+	defaultMemorySize      = 1           // デフォルトメモリサイズ
+	defaultDiskPlan        = "ssd"       // ディスクプラン(ssd/hdd)
+	defaultDiskSize        = 20480       // 20GB
+	defaultDiskConnection  = "virtio"    // ディスク接続ドライバ
+	defaultInterfaceDriver = "virtio"    // NIC接続ドライバ
+	defaultPacketFilter    = "0"
+	defaultEnablePWAuth    = false
 )
 
 type SakuraServerConfig struct {
-	HostName            string
-	Core                int
-	MemorySize          int
-	ConnectedSwitch     string
-	PrivateIPOnly       bool
-	PrivateIP           string
-	PrivateIPSubnetMask string
-	Gateway             string
-	DiskPlan            string
-	DiskSize            int
-	DiskName            string
-	DiskConnection      string
-	DiskSourceArchiveID string
-	Password            string
-	Group               string
-	AutoReboot          bool
-	IgnoreVirtioNet     bool
-	PacketFilter        string
-	PrivatePacketFilter string
-	EnablePWAuth        bool
-	EnginePort          int
-	DNSZone             string
-	GSLB                string
+	HostName        string
+	OSType          string
+	Core            int
+	Memory          int
+	DiskPlan        string
+	DiskSize        int
+	DiskConnection  string
+	InterfaceDriver string
+	Password        string
+	PacketFilter    string
+	EnablePWAuth    bool
+	EnginePort      int
 }
 
-func (c *SakuraServerConfig) GetPlanID() string {
-	return fmt.Sprintf("%d%03d", c.MemorySize, c.Core)
+func (c *SakuraServerConfig) SSHUserName() string {
+	switch c.OSType {
+	case "ubuntu":
+		return "ubuntu"
+	case "rancheros":
+		return "rancher"
+	default:
+		return "root"
+	}
 }
 
-func (c *SakuraServerConfig) IsDiskNameDefault() bool {
-	return c.DiskName == defaultDiskName
+func (c *SakuraServerConfig) IsUbuntu() bool {
+	return c.OSType == "ubuntu"
 }
 
 var DefaultServerConfig = &SakuraServerConfig{
-	Core:                defaultCore,
-	MemorySize:          defaultMemorySize,
-	PrivateIPOnly:       defaultPrivateIPOnly,
-	ConnectedSwitch:     defaultConnectedSwitch,
-	PrivateIP:           defaultPrivateIP,
-	PrivateIPSubnetMask: defaultPrivateIPSubnetMask,
-	Gateway:             defaultGateway,
-	DiskPlan:            defaultDiskPlan,
-	DiskSize:            defaultDiskSize,
-	DiskName:            defaultDiskName,
-	Group:               defaultGroup,
-	AutoReboot:          defaultAutoReboot,
-	IgnoreVirtioNet:     defaultIgnoreVirtioNet,
-	PacketFilter:        defaultPacketFilter,
-	PrivatePacketFilter: defaultPrivatePacketFilter,
-	EnablePWAuth:        defaultEnablePWAuth,
-	EnginePort:          engine.DefaultPort,
-	DNSZone:             defaultDNSZone,
-	GSLB:                defaultGSLB,
+	Core:         defaultCore,
+	Memory:       defaultMemorySize,
+	DiskPlan:     defaultDiskPlan,
+	DiskSize:     defaultDiskSize,
+	PacketFilter: defaultPacketFilter,
+	EnablePWAuth: defaultEnablePWAuth,
+	EnginePort:   engine.DefaultPort,
 }
 
 // McnFlags OptionList
@@ -98,10 +73,16 @@ var McnFlags = []mcnflag.Flag{
 		Usage:  "sakuracloud access token secret",
 	},
 	mcnflag.StringFlag{
-		EnvVar: "SAKURACLOUD_REGION",
-		Name:   "sakuracloud-region",
-		Usage:  "sakuracloud region name[tk1a/is1a/is1b/tk1v]",
+		EnvVar: "SAKURACLOUD_ZONE",
+		Name:   "sakuracloud-zone",
+		Usage:  "sakuracloud zone name[is1b/tk1a/is1a]",
 		Value:  defaultRegion,
+	},
+	mcnflag.StringFlag{
+		EnvVar: "SAKURACLOUD_OS_TYPE",
+		Name:   "sakuracloud-os-type",
+		Usage:  "sakuracloud os(public-archive) type[centos/ubuntu/debian/rancheros]",
+		Value:  defaultOSType,
 	},
 	mcnflag.IntFlag{
 		EnvVar: "SAKURACLOUD_CORE",
@@ -110,56 +91,21 @@ var McnFlags = []mcnflag.Flag{
 		Value:  defaultCore,
 	},
 	mcnflag.IntFlag{
-		EnvVar: "SAKURACLOUD_MEMORY_SIZE",
-		Name:   "sakuracloud-memory-size",
+		EnvVar: "SAKURACLOUD_MEMORY",
+		Name:   "sakuracloud-memory",
 		Usage:  "sakuracloud memory size(GB)",
 		Value:  defaultMemorySize,
 	},
 	mcnflag.StringFlag{
-		EnvVar: "SAKURACLOUD_CONNECTED_SWITCH",
-		Name:   "sakuracloud-connected-switch",
-		Usage:  "sakuracloud connected switch['switch ID']",
-		Value:  defaultConnectedSwitch,
-	},
-	mcnflag.BoolFlag{
-		EnvVar: "SAKURACLOUD_PRIVATE_IP_ONLY",
-		Name:   "sakuracloud-private-ip-only",
-		Usage:  "sakuracloud private ip only flag",
-	},
-	mcnflag.StringFlag{
-		EnvVar: "SAKURACLOUD_PRIVATE_IP",
-		Name:   "sakuracloud-private-ip",
-		Usage:  "sakuracloud private ip['xxx.xxx.xxx.xxx']",
-		Value:  defaultPrivateIP,
-	},
-	mcnflag.StringFlag{
-		EnvVar: "SAKURACLOUD_PRIVATE_IP_SUBNET_MASK",
-		Name:   "sakuracloud-private-ip-subnet-mask",
-		Usage:  "sakuracloud private ip subnetmask['255.255.255.0']",
-		Value:  defaultPrivateIPSubnetMask,
-	},
-	mcnflag.StringFlag{
-		EnvVar: "SAKURACLOUD_GATEWAY",
-		Name:   "sakuracloud-gateway",
-		Usage:  "sakuracloud default gateway ip address",
-		Value:  defaultGateway,
-	},
-	mcnflag.StringFlag{
 		EnvVar: "SAKURACLOUD_DISK_PLAN",
 		Name:   "sakuracloud-disk-plan",
-		Usage:  "sakuracloud disk plan[HDD(2)/SSD(4)]",
-		Value:  defaultDiskPlan,
-	},
-	mcnflag.StringFlag{
-		EnvVar: "SAKURACLOUD_DISK_NAME",
-		Name:   "sakuracloud-disk-name",
-		Usage:  "sakuracloud disk name",
-		Value:  defaultDiskName,
+		Usage:  "sakuracloud disk plan[hdd/ssd]",
+		Value:  string(defaultDiskPlan),
 	},
 	mcnflag.IntFlag{
 		EnvVar: "SAKURACLOUD_DISK_SIZE",
 		Name:   "sakuracloud-disk-size",
-		Usage:  "sakuracloud disk size(MB)[20480,102400,256000,512000]",
+		Usage:  "sakuracloud disk size(GB)[20(SSD)/40/60(HDD)/80(HDD)/100/250/500/750(HDD)/1024/2048/4096]",
 		Value:  defaultDiskSize,
 	},
 	mcnflag.StringFlag{
@@ -169,37 +115,21 @@ var McnFlags = []mcnflag.Flag{
 		Value:  defaultDiskConnection,
 	},
 	mcnflag.StringFlag{
+		EnvVar: "SAKURACLOUD_INTERFACE_DRIVER",
+		Name:   "sakuracloud-interface-driver",
+		Usage:  "sakuracloud interface(NIC) driver[virtio/e1000]",
+		Value:  string(defaultInterfaceDriver),
+	},
+	mcnflag.StringFlag{
 		EnvVar: "SAKURACLOUD_PASSWORD",
 		Name:   "sakuracloud-password",
 		Usage:  "sakuracloud user password",
 	},
 	mcnflag.StringFlag{
-		EnvVar: "SAKURACLOUD_GROUP",
-		Name:   "sakuracloud-group",
-		Usage:  "sakuracloud @group tag [a/b/c/d]",
-		Value:  defaultGroup,
-	},
-	mcnflag.BoolFlag{
-		EnvVar: "SAKURACLOUD_AUTO_REBOOT",
-		Name:   "sakuracloud-auto-reboot",
-		Usage:  "sakuracloud @auto-reboot tag flag",
-	},
-	mcnflag.BoolFlag{
-		EnvVar: "SAKURACLOUD_IGNORE_VIRTIO_NET",
-		Name:   "sakuracloud-ignore-virtio-net",
-		Usage:  "sakuracloud ignore @virtio-net-pci tag flag",
-	},
-	mcnflag.StringFlag{
 		EnvVar: "SAKURACLOUD_PACKET_FILTER",
 		Name:   "sakuracloud-packet-filter",
-		Usage:  "sakuracloud packet-filter for eth0(shared)[filter ID or NAME]",
-		Value:  defaultPacketFilter,
-	},
-	mcnflag.StringFlag{
-		EnvVar: "SAKURACLOUD_PRIVATE_PACKET_FILTER",
-		Name:   "sakuracloud-private-packet-filter",
-		Usage:  "sakuracloud packet-filter for eth1(private)[filter ID or NAME]",
-		Value:  defaultPacketFilter,
+		Usage:  "sakuracloud packet-filter for eth0(shared)[filter ID]",
+		Value:  fmt.Sprintf("%d", defaultPacketFilter),
 	},
 	mcnflag.BoolFlag{
 		EnvVar: "SAKURACLOUD_ENABLE_PASSWORD_AUTH",
@@ -216,18 +146,6 @@ var McnFlags = []mcnflag.Flag{
 		EnvVar: "SAKURACLOUD_SSH_KEY",
 		Name:   "sakuracloud-ssh-key",
 		Usage:  "SSH Private Key Path",
-		Value:  "",
-	},
-	mcnflag.StringFlag{
-		EnvVar: "SAKURACLOUD_DNS_ZONE",
-		Name:   "sakuracloud-dns-zone",
-		Usage:  "Dns Zone(for commonserviceitem)",
-		Value:  "",
-	},
-	mcnflag.StringFlag{
-		EnvVar: "SAKURACLOUD_GSLB",
-		Name:   "sakuracloud-gslb",
-		Usage:  "GSLB Name",
 		Value:  "",
 	},
 }

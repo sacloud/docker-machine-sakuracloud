@@ -38,6 +38,18 @@ type vpcRouterResponse struct {
 	Success            interface{} `json:",omitempty"` //HACK: さくらのAPI側仕様: 戻り値:Successがbool値へ変換できないためinterface{}
 }
 
+type vpcRouterStatusResponse struct {
+	*sacloud.ResultFlagValue
+	*sacloud.VPCRouterStatus `json:"Router"`
+	Success                  interface{} `json:",omitempty"` //HACK: さくらのAPI側仕様: 戻り値:Successがbool値へ変換できないためinterface{}
+}
+
+type vpcRouterS2sConnInfoResponse struct {
+	*sacloud.ResultFlagValue
+	*sacloud.SiteToSiteConnectionInfo
+	Name string
+}
+
 // VPCRouterAPI VPCルーターAPI
 type VPCRouterAPI struct {
 	*baseAPI
@@ -414,14 +426,13 @@ func (api *VPCRouterAPI) addInterfaceAt(routerID int64, switchID int64, routerNI
 		if len(req.Settings.Router.Interfaces) < index {
 			req.Settings.Router.Interfaces = append(req.Settings.Router.Interfaces, nil)
 		}
-
-		if i == index {
-			req.Settings.Router.Interfaces[index] = routerNIC
-		}
-
 	}
 
-	req.Settings.Router.Interfaces = append(req.Settings.Router.Interfaces, routerNIC)
+	if len(req.Settings.Router.Interfaces) < index+1 {
+		req.Settings.Router.Interfaces = append(req.Settings.Router.Interfaces, routerNIC)
+	} else {
+		req.Settings.Router.Interfaces[index] = routerNIC
+	}
 
 	res, err := api.UpdateSetting(routerID, req)
 	if err != nil {
@@ -475,4 +486,32 @@ func (api *VPCRouterAPI) DeleteInterfaceAt(routerID int64, index int) (*sacloud.
 // MonitorBy 指定位置のインターフェースのアクティビティーモニター取得
 func (api *VPCRouterAPI) MonitorBy(id int64, nicIndex int, body *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 	return api.baseAPI.applianceMonitorBy(id, "interface", nicIndex, body)
+}
+
+// Status ログなどのステータス情報 取得
+func (api *VPCRouterAPI) Status(id int64) (*sacloud.VPCRouterStatus, error) {
+	var (
+		method = "GET"
+		uri    = fmt.Sprintf("%s/%d/status", api.getResourceURL(), id)
+		res    = &vpcRouterStatusResponse{}
+	)
+	err := api.baseAPI.request(method, uri, nil, res)
+	if err != nil {
+		return nil, err
+	}
+	return res.VPCRouterStatus, nil
+}
+
+// SiteToSiteConnectionDetails サイト間VPN接続情報を取得
+func (api *VPCRouterAPI) SiteToSiteConnectionDetails(id int64) (*sacloud.SiteToSiteConnectionInfo, error) {
+	var (
+		method = "GET"
+		uri    = fmt.Sprintf("%s/%d/vpcrouter/sitetosite/connectiondetails", api.getResourceURL(), id)
+		res    = &vpcRouterS2sConnInfoResponse{}
+	)
+	err := api.baseAPI.request(method, uri, nil, res)
+	if err != nil {
+		return nil, err
+	}
+	return res.SiteToSiteConnectionInfo, nil
 }
