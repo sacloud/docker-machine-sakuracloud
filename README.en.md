@@ -5,7 +5,7 @@ to create Docker hosts on [SAKURA CLOUD](http://cloud.sakura.ad.jp)
 
 ([日本語版](README.md))
 
-[![Build Status](https://travis-ci.org/yamamoto-febc/docker-machine-sakuracloud.svg?branch=master)](https://travis-ci.org/yamamoto-febc/docker-machine-sakuracloud)
+[![Build Status](https://travis-ci.org/sacloud/docker-machine-sakuracloud.svg?branch=master)](https://travis-ci.org/sacloud/docker-machine-sakuracloud)
 
 #### Running with Docker
 
@@ -35,7 +35,7 @@ download the binary `docker-machine-driver-sakuracloud`
 and  make it available by `$PATH`, for example by putting it to `/usr/local/bin/`
 
 The latest version of `docker-machine-driver-sakuracloud` binary is available on
-the ["Releases"](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/latest) page.
+the ["Releases"](https://github.com/sacloud/docker-machine-sakuracloud/releases/latest) page.
 
 ## Usage
 Official documentation for Docker Machine [is available here](https://docs.docker.com/machine/).

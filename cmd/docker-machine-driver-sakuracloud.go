@@ -6,8 +6,8 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine/drivers/plugin"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/driver"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/version"
+	"github.com/sacloud/docker-machine-sakuracloud/driver"
+	"github.com/sacloud/docker-machine-sakuracloud/version"
 )
 
 var appHelpTemplate = `This is a Docker Machine plugin for SAKURA CLOUD.

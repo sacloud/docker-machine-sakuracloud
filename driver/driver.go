@@ -16,9 +16,9 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/sacloud/docker-machine-sakuracloud/sakuracloud"
 	"github.com/sacloud/libsacloud/builder"
 	"github.com/sacloud/libsacloud/sacloud"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/sakuracloud"
 )
 
 // Driver sakuracloud driver

@@ -5,5 +5,5 @@ RUN  apt-get update && apt-get -y install bash git make zip && apt-get clean && 
 RUN go get  github.com/golang/lint/golint
 
 ENV USER root
-WORKDIR /go/src/github.com/yamamoto-febc/docker-machine-sakuracloud
-COPY . /go/src/github.com/yamamoto-febc/docker-machine-sakuracloud
+WORKDIR /go/src/github.com/sacloud/docker-machine-sakuracloud
+COPY . /go/src/github.com/sacloud/docker-machine-sakuracloud

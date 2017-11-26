@@ -19,6 +19,6 @@ docker run --name $DOCKER_CONTAINER_NAME \
        -e TESTARGS \
        $DOCKER_IMAGE_NAME make "$@"
 if [[ "$@" == *"build"* ]]; then
-  docker cp $DOCKER_CONTAINER_NAME:/go/src/github.com/yamamoto-febc/docker-machine-sakuracloud/bin ./
+  docker cp $DOCKER_CONTAINER_NAME:/go/src/github.com/sacloud/docker-machine-sakuracloud/bin ./
 fi
 docker rm -f $DOCKER_CONTAINER_NAME 2>/dev/null

@@ -2,16 +2,17 @@ package sakuracloud
 
 import (
 	"fmt"
+	"github.com/sacloud/docker-machine-sakuracloud/version"
 	"github.com/sacloud/libsacloud/api"
 	"github.com/sacloud/libsacloud/builder"
 	"github.com/sacloud/libsacloud/sacloud/ostype"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/version"
 )
 
 type APIClient struct {
 	AccessToken       string
 	AccessTokenSecret string
 	Zone              string
+	Region            string // 後方互換
 	client            *api.Client
 	initialized       bool
 }
@@ -28,6 +29,9 @@ func NewAPIClient(token string, secret string, zone string) *APIClient {
 
 func (c *APIClient) Init() {
 	if !c.initialized {
+		if c.Zone == "" && c.Region != "" {
+			c.Zone = c.Region
+		}
 		c.client = api.NewClient(c.AccessToken, c.AccessTokenSecret, c.Zone)
 		c.client.UserAgent = fmt.Sprintf("docker-machine-sakuracloud/%s", version.Version)
 		c.initialized = true

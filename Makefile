@@ -1,7 +1,7 @@
 TEST?=$$(go list ./...)
 VETARGS?=-all
 GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
-GOLINT_TARGETS?=$$(golint github.com/yamamoto-febc/docker-machine-sakuracloud | tee /dev/stderr)
+GOLINT_TARGETS?=$$(golint github.com/sacloud/docker-machine-sakuracloud | tee /dev/stderr)
 CURRENT_VERSION := $(shell git log --merges --oneline | perl -ne 'if(m/^.+Merge pull request \#[0-9]+ from .+\/bump-version-([0-9\.]+)/){print $$1;exit}')
 
 BUILD_LDFLAGS = "-s -w \

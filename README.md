@@ -4,7 +4,7 @@
 
 ([English version](README.en.md))
 
-[![Build Status](https://travis-ci.org/yamamoto-febc/docker-machine-sakuracloud.svg?branch=master)](https://travis-ci.org/yamamoto-febc/docker-machine-sakuracloud)
+[![Build Status](https://travis-ci.org/sacloud/docker-machine-sakuracloud.svg?branch=master)](https://travis-ci.org/sacloud/docker-machine-sakuracloud)
 
 ## 実行方法
 
@@ -41,7 +41,7 @@ docker run -it --rm -e MACHINE_STORAGE_PATH=$HOME/.docker/machine \
 (Windowsの場合はdocker-machine.exeと同じフォルダに配置すればよいです)
 配置後にchmod +xしておいてください。
 
-`docker-machine-driver-sakuracloud`の最新のバイナリはこちらの["Releases"](https://github.com/yamamoto-febc/docker-machine-sakuracloud/releases/latest)ページからダウンロードできます。
+`docker-machine-driver-sakuracloud`の最新のバイナリはこちらの["Releases"](https://github.com/sacloud/docker-machine-sakuracloud/releases/latest)ページからダウンロードできます。
 
 ## 使い方
 
