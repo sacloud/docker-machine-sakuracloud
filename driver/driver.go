@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/docker/machine/libmachine/drivers"
@@ -17,27 +16,25 @@ import (
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
+	"github.com/sacloud/libsacloud/builder"
 	"github.com/sacloud/libsacloud/sacloud"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/lib/api"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/spec"
+	"github.com/yamamoto-febc/docker-machine-sakuracloud/sakuracloud"
 )
 
 // Driver sakuracloud driver
 type Driver struct {
 	*drivers.BaseDriver
-	serverConfig *spec.SakuraServerConfig
-	Client       *api.APIClient
+	serverConfig *sakuraServerConfig
+	Client       *sakuracloud.APIClient
 	ID           string
 	DiskID       string
 	EnginePort   int
 	SSHKey       string
-	DNSZone      string
-	GSLB         string
 }
 
 // GetCreateFlags create flags
 func (d *Driver) GetCreateFlags() []mcnflag.Flag {
-	return spec.McnFlags
+	return mcnFlags
 }
 
 // NewDriver create driver instance
@@ -47,37 +44,36 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 			MachineName: hostName,
 			StorePath:   storePath,
 		},
-		Client:       &api.APIClient{},
-		serverConfig: spec.DefaultServerConfig,
-		EnginePort:   spec.DefaultServerConfig.EnginePort,
-		DNSZone:      spec.DefaultServerConfig.DNSZone,
-		GSLB:         spec.DefaultServerConfig.GSLB,
+		Client:       &sakuracloud.APIClient{},
+		serverConfig: defaultServerConfig,
+		EnginePort:   defaultServerConfig.EnginePort,
 	}
 }
 
-func validateSakuraServerConfig(c *api.APIClient, config *spec.SakuraServerConfig) error {
-	//さくら用設定のバリデーション
+func validateSakuraServerConfig(c *sakuracloud.APIClient, config *sakuraServerConfig) error {
 
-	//ex. プランの存在確認や矛盾した設定の検出など
-	if config.ConnectedSwitch != "" && config.PrivateIP == "" {
-		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
+	err := config.Validate()
+	if err != nil {
+		return fmt.Errorf("Invalid Parameter: %s", err)
 	}
 
-	if config.PrivateIPOnly && config.PrivateIP == "" {
-		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
-	}
-
-	if config.PrivatePacketFilter != "" && config.PrivateIP == "" {
-		return fmt.Errorf("Missing Private IP --sakuracloud-private-ip")
-	}
-
-	res, err := c.IsValidPlan(config.Core, config.MemorySize)
+	res, err := c.IsValidPlan(config.Core, config.Memory)
 	if !res || err != nil {
 		return fmt.Errorf("Invalid Parameter: core or memory is invalid : %v", err)
 	}
 
-	if config.PrivateIPOnly && config.GSLB != "" {
-		return fmt.Errorf("GSLB Needs Global IP. Please unset --sakuracloud-private-ip-only.")
+	if config.PacketFilter != "" {
+		id, valid := sakuracloud.ToSakuraID(config.PacketFilter)
+		if !valid {
+			return fmt.Errorf("Invalid Parameter: invalid packet-filter-id")
+		}
+		exists, err := c.IsExistsPacketFilter(id)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return fmt.Errorf("Invalid Parameter: packet-filter[id:%d] is not exists", id)
+		}
 	}
 
 	return nil
@@ -85,72 +81,51 @@ func validateSakuraServerConfig(c *api.APIClient, config *spec.SakuraServerConfi
 
 // SetConfigFromFlags create config values from flags
 func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
-	d.Client = api.NewAPIClient(
+	// API Client
+	d.Client = sakuracloud.NewAPIClient(
 		flags.String("sakuracloud-access-token"),
 		flags.String("sakuracloud-access-token-secret"),
-		flags.String("sakuracloud-region"),
+		flags.String("sakuracloud-zone"),
 	)
-
-	d.SwarmMaster = flags.Bool("swarm-master")
-	d.SwarmHost = flags.String("swarm-host")
-	d.SwarmDiscovery = flags.String("swarm-discovery")
-	d.SSHUser = "ubuntu"
-	d.SSHPort = 22
-	d.SSHKey = flags.String("sakuracloud-ssh-key")
-
 	if err := d.getClient().ValidateClientConfig(); err != nil {
 		return err
 	}
 
-	d.serverConfig = &spec.SakuraServerConfig{
-		HostName:            "",
-		Core:                flags.Int("sakuracloud-core"),
-		MemorySize:          flags.Int("sakuracloud-memory-size"),
-		ConnectedSwitch:     flags.String("sakuracloud-connected-switch"),
-		PrivateIP:           flags.String("sakuracloud-private-ip"),
-		PrivateIPSubnetMask: flags.String("sakuracloud-private-ip-subnet-mask"),
-		PrivateIPOnly:       flags.Bool("sakuracloud-private-ip-only"),
-		Gateway:             flags.String("sakuracloud-gateway"),
-		DiskPlan:            flags.String("sakuracloud-disk-plan"),
-		DiskSize:            flags.Int("sakuracloud-disk-size"),
-		DiskName:            flags.String("sakuracloud-disk-name"),
-		DiskConnection:      flags.String("sakuracloud-disk-connection"),
-		Group:               flags.String("sakuracloud-group"),
-		AutoReboot:          flags.Bool("sakuracloud-auto-reboot"),
-		IgnoreVirtioNet:     flags.Bool("sakuracloud-ignore-virtio-net"),
-		PacketFilter:        flags.String("sakuracloud-packet-filter"),
-		PrivatePacketFilter: flags.String("sakuracloud-private-packet-filter"),
-		EnablePWAuth:        flags.Bool("sakuracloud-enable-password-auth"),
+	// Swarm(legacy swarm)
+	d.SwarmMaster = flags.Bool("swarm-master")
+	d.SwarmHost = flags.String("swarm-host")
+	d.SwarmDiscovery = flags.String("swarm-discovery")
+
+	d.serverConfig = &sakuraServerConfig{
+		HostName:        "",
+		OSType:          flags.String("sakuracloud-os-type"),
+		Core:            flags.Int("sakuracloud-core"),
+		Memory:          flags.Int("sakuracloud-memory"),
+		DiskPlan:        flags.String("sakuracloud-disk-plan"),
+		DiskSize:        flags.Int("sakuracloud-disk-size"),
+		DiskConnection:  flags.String("sakuracloud-disk-connection"),
+		InterfaceDriver: flags.String("sakuracloud-interface-driver"),
+		Password:        flags.String("sakuracloud-password"),
+		PacketFilter:    flags.String("sakuracloud-packet-filter"),
+		EnablePWAuth:    flags.Bool("sakuracloud-enable-password-auth"),
 	}
 
 	if d.serverConfig.HostName == "" {
 		d.serverConfig.HostName = d.GetMachineName()
 	}
 
-	if d.serverConfig.IsDiskNameDefault() {
-		d.serverConfig.DiskName = d.GetMachineName()
-	}
+	// for SSH
+	d.SSHUser = d.serverConfig.SSHUserName()
+	d.SSHPort = 22
+	d.SSHKey = flags.String("sakuracloud-ssh-key")
 
-	if d.serverConfig.PrivateIPOnly {
-		d.IPAddress = d.serverConfig.PrivateIP
-	}
-
-	if d.serverConfig.DiskSourceArchiveID == "" {
-		archiveID, err := d.getClient().GetUbuntuArchiveID()
-		if err != nil {
-			return err
-		}
-		d.serverConfig.DiskSourceArchiveID = archiveID
-	}
-
+	// for docker engine port
 	d.EnginePort = flags.Int("sakuracloud-engine-port")
-	d.DNSZone = flags.String("sakuracloud-dns-zone")
-	d.GSLB = flags.String("sakuracloud-gslb")
 
 	return validateSakuraServerConfig(d.Client, d.serverConfig)
 }
 
-func (d *Driver) getClient() *api.APIClient {
+func (d *Driver) getClient() *sakuracloud.APIClient {
 	d.Client.Init()
 	return d.Client
 }
@@ -183,11 +158,7 @@ func (d *Driver) GetIP() (string, error) {
 		return d.IPAddress, nil
 	}
 
-	if d.serverConfig.PrivateIPOnly {
-		return d.serverConfig.PrivateIP, nil
-	}
-
-	return d.getClient().GetIP(d.ID, d.serverConfig.PrivateIPOnly)
+	return d.getClient().GetIP(d.ID)
 
 }
 
@@ -221,211 +192,73 @@ func (d *Driver) PreCreateCheck() error {
 		if _, err := os.Stat(d.SSHKey + ".pub"); os.IsNotExist(err) {
 			return fmt.Errorf("Ssh public key does not exist: %q", d.SSHKey+".pub")
 		}
-
 	}
-
 	return nil
 }
 
 // Create create server on sakuracloud
 func (d *Driver) Create() error {
-	spec := d.buildSakuraServerSpec()
 
-	var publicKey = ""
+	publicKey, err := d.prepareSSHKey()
+	if err != nil {
+		return err
+	}
+	d.preparePassword()
+
+	// build server
+	sb := d.buildSakuraServerSpec(publicKey)
+	serverResponse, err := sb.Build()
+	if err != nil {
+		return fmt.Errorf("Error creating host: %v", err)
+	}
+	d.ID = serverResponse.Server.GetStrID()
+	d.DiskID = serverResponse.Disks[0].Disk.GetStrID()
+
+	if d.serverConfig.IsNeedWaitingRestart() {
+		// wait for shutdown
+		d.waitForServerByState(state.Stopped)
+		d.Start()
+		d.waitForServerByState(state.Running)
+	}
+
+	return nil
+}
+
+func (d *Driver) prepareSSHKey() (string, error) {
 	if d.SSHKey == "" {
 		log.Infof("Creating SSH public key...")
 		pKey, err := d.createSSHKey()
 		if err != nil {
-			return err
+			return "", err
 		}
-		publicKey = pKey
+		return pKey, nil
 	} else {
 		log.Info("Importing SSH key...")
 		if err := mcnutils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
-			return fmt.Errorf("unable to copy ssh key: %s", err)
+			return "", fmt.Errorf("unable to copy ssh key: %s", err)
 		}
 		if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
-			return fmt.Errorf("unable to set permissions on the ssh key: %s", err)
+			return "", fmt.Errorf("unable to set permissions on the ssh key: %s", err)
 		}
 		if err := mcnutils.CopyFile(d.SSHKey+".pub", d.GetSSHKeyPath()+".pub"); err != nil {
-			return fmt.Errorf("unable to copy ssh key: %s", err)
+			return "", fmt.Errorf("unable to copy ssh key: %s", err)
 		}
 
 		pKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
 		if err != nil {
-			return err
+			return "", err
 		}
 
-		publicKey = string(pKey)
+		return string(pKey), nil
 	}
 
+}
+
+func (d *Driver) preparePassword() {
 	if d.serverConfig.Password == "" {
 		d.serverConfig.Password = generateRandomPassword()
-		log.Infof("password is not set, generated password:%s", d.serverConfig.Password)
+		log.Infof("password is not set, generated.[password:%s]", d.serverConfig.Password)
 	}
-
-	//create server
-	serverResponse, err := d.getClient().Create(spec, d.serverConfig.PrivateIP)
-	if err != nil {
-		return fmt.Errorf("Error creating host: %v", err)
-	}
-	id := fmt.Sprintf("%d", serverResponse.ID)
-	log.Infof("Created Server ID: %s", id)
-	d.ID = id
-
-	var noteIDs []string
-
-	noteID, err := d.getClient().GetAllowSudoNoteID(id)
-	if err != nil || noteID == "" {
-		return fmt.Errorf("Error creating custom note: %v", err)
-	}
-	noteIDs = append(noteIDs, noteID)
-
-	var addIPNoteID = ""
-	if d.serverConfig.PrivateIP != "" {
-		var err error
-		addIPNoteID, err = d.getClient().GetAddIPCustomizeNoteID(id, d.serverConfig.PrivateIP, d.serverConfig.PrivateIPSubnetMask)
-		if err != nil {
-			return fmt.Errorf("Error creating custom note: %v", err)
-		}
-
-		if addIPNoteID != "" {
-			noteIDs = append(noteIDs, addIPNoteID)
-		}
-	}
-
-	var changeGatewayNoteID = ""
-	if d.serverConfig.Gateway != "" {
-		var err error
-		changeGatewayNoteID, err = d.getClient().GetChangeGatewayCustomizeNoteID(id, d.serverConfig.Gateway)
-		if err != nil {
-			return fmt.Errorf("Error creating custom note: %v", err)
-		}
-
-		if changeGatewayNoteID != "" {
-			noteIDs = append(noteIDs, changeGatewayNoteID)
-		}
-
-	}
-
-	var disableEth0NoteID = ""
-	if d.serverConfig.PrivateIPOnly {
-		var err error
-		disableEth0NoteID, err = d.getClient().GetDisableEth0CustomizeNoteID(id)
-		if err != nil {
-			return fmt.Errorf("Error creating custom note: %v", err)
-		}
-
-		if disableEth0NoteID != "" {
-			noteIDs = append(noteIDs, disableEth0NoteID)
-		}
-
-	}
-
-	// create disk( from public archive 'Ubuntu')
-	diskSpec := d.buildSakuraDiskSpec()
-	diskID, err := d.getClient().CreateDisk(diskSpec)
-	if err != nil {
-		return fmt.Errorf("Error creating disk: %v", err)
-	}
-	log.Infof("Created Disk ID: %v", diskID)
-	d.DiskID = diskID
-
-	//wait for disk available
-	d.waitForDiskAvailable()
-
-	//connect disk for server
-	connectSuccess, err := d.getClient().ConnectDisk(diskID, id)
-	if err != nil || !connectSuccess {
-		return fmt.Errorf("Error connecting disk to server: %v", err)
-	}
-
-	//edit disk
-	editDiskSpec := d.buildSakuraDiskEditSpec(publicKey, noteIDs[:])
-	editSuccess, err := d.getClient().EditDisk(diskID, editDiskSpec)
-	if err != nil || !editSuccess {
-		return fmt.Errorf("Error editting disk: %v", err)
-	}
-	log.Infof("Editted Disk Id: %v", diskID)
-	d.waitForDiskAvailable()
-
-	//connect packet filter
-	if d.serverConfig.PacketFilter != "" {
-		log.Infof("Connecting Packet Filter(shared): %v", d.serverConfig.PacketFilter)
-		err := d.getClient().ConnectPacketFilterToSharedNIC(serverResponse, d.serverConfig.PacketFilter)
-		if err != nil {
-			return fmt.Errorf("Error connecting PacketFilter(shared): %v", err)
-		}
-	}
-
-	if d.serverConfig.PrivatePacketFilter != "" {
-		log.Infof("Connecting Packet Filter(private): %v", d.serverConfig.PrivatePacketFilter)
-		err := d.getClient().ConnectPacketFilterToPrivateNIC(serverResponse, d.serverConfig.PrivatePacketFilter)
-		if err != nil {
-			return fmt.Errorf("Error connecting PacketFilter(prvate): %v", err)
-		}
-
-	}
-
-	if d.DNSZone != "" {
-		log.Infof("Setting SakuraCloud DNS: %v", d.DNSZone)
-		ip, _ := d.GetIP()
-		ns, err := d.getClient().SetupDnsRecord(d.DNSZone, d.GetMachineName(), ip)
-		if err != nil {
-			return fmt.Errorf("Error setting SakuraCloud DNS: %v", err)
-		}
-
-		if ns != nil {
-			log.Infof("Added DNS Zone,Please Set Whois NameServer to [%s]", strings.Join(ns, ","))
-		}
-
-	}
-
-	if d.GSLB != "" {
-		log.Infof("Setting SakuraCloud GSLB: %v", d.GSLB)
-		ip, _ := d.GetIP()
-		fqdn, err := d.getClient().SetupGslbRecord(d.GSLB, ip)
-		if err != nil {
-			return fmt.Errorf("Error setting SakuraCloud GSLV: %v", err)
-		}
-
-		if fqdn != nil {
-			log.Infof("Added GSLB,Please Set CNAME Record : ex. 'your-lb-hostname IN CNAME %s'", fqdn)
-		}
-	}
-
-	//start
-	err = d.getClient().PowerOn(id)
-	if err != nil {
-		return fmt.Errorf("Error starting server: %v", err)
-	}
-	//wait for startup
-	d.waitForServerByState(state.Running)
-
-	// wait for reboot (only upgradeKernel option is true)
-	//if d.serverConfig.UpgradeKernel {
-	//wait for applay startup script and shutdown
-	d.waitForServerByState(state.Stopped)
-
-	//restart
-	err = d.getClient().PowerOn(id)
-	if err != nil {
-		return fmt.Errorf("Error starting server: %v", err)
-	}
-	//wait for startup
-	d.waitForServerByState(state.Running)
-	//}
-
-	//cleanup notes
-	for n := range noteIDs {
-		err = d.getClient().DeleteNote(noteIDs[n])
-		if err != nil {
-			return fmt.Errorf("Error deleting note: %v", err)
-		}
-
-	}
-
-	return nil
 }
 
 func generateRandomPassword() string {
@@ -452,90 +285,89 @@ func (d *Driver) waitForServerByState(waitForState state.State) {
 	}
 }
 
-func (d *Driver) waitForDiskAvailable() {
-	log.Infof("Waiting for disk to become available")
-	for {
-		s, err := d.getClient().GetDiskByID(d.DiskID)
-		if err != nil {
-			log.Debugf("Failed to get DiskState - %+v", err)
-			continue
-		}
+const sakuraAllowSudoScriptBody = `#!/bin/bash
+# @sacloud-once
+# @sacloud-desc ubuntuユーザーがsudo出来るように/etc/sudoersを編集します
+# @sacloud-desc （このスクリプトは、DebianもしくはUbuntuでのみ動作します）
+# @sacloud-require-archive distro-debian
+# @sacloud-require-archive distro-ubuntu
+export DEBIAN_FRONTEND=noninteractive
+echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || exit 1
+sh -c 'sleep 10; shutdown -h now' &
+exit 0`
 
-		if s.Availability == "available" {
-			break
-		} else {
-			log.Debugf("Still waiting - state is %s...", s)
-		}
-		time.Sleep(5 * time.Second)
-	}
-}
+const sakuraInstallNetToolsScriptBody = `#!/bin/bash
+# @sacloud-once
+# @sacloud-desc docker-machine用のプロビジョニング準備を行います
+# @sacloud-desc （このスクリプトは、CentOSでのみ動作します）
+# @sacloud-require-archive distro-centos
+yum install -y net-tools || exit 1
+firewall-cmd --zone=public --add-port=%d/tcp --permanent || exit 1
+sh -c 'sleep 10; shutdown -h now' &
+exit 0`
 
-func (d *Driver) buildSakuraServerSpec() *sacloud.Server {
+func (d *Driver) buildSakuraServerSpec(publicKey string) *builder.PublicArchiveUnixServerBuilder {
 
-	var tags []string
-	if !d.serverConfig.IgnoreVirtioNet {
-		tags = append(tags, "@virtio-net-pci")
-	}
-	if d.serverConfig.Group != "" {
-		tags = append(tags, fmt.Sprintf("@group=%s", d.serverConfig.Group))
-	}
-	if d.serverConfig.AutoReboot {
-		tags = append(tags, "@auto-reboot")
-	}
+	name := d.serverConfig.HostName
+	b := d.getClient().ServerBuilder(
+		d.serverConfig.OSType,
+		name,
+		d.serverConfig.Password,
+	)
 
-	spec := d.Client.NewServer()
-	spec.Name = d.serverConfig.HostName
-	spec.Description = ""
-	spec.Tags = tags[:]
-	spec.SetServerPlanByID(d.serverConfig.GetPlanID())
-	spec.AddPublicNWConnectedParam()
-	if d.serverConfig.ConnectedSwitch != "" {
-		spec.AddExistsSwitchConnectedParam(d.serverConfig.ConnectedSwitch)
-	} else if d.serverConfig.PrivateIP != "" {
-		spec.AddEmptyConnectedParam()
-	}
+	// set server spec
+	b.SetServerName(name)
+	b.SetHostName(name)
+	b.SetCore(d.serverConfig.Core)
+	b.SetMemory(d.serverConfig.Memory)
+	b.AddPublicNWConnectedNIC()
 
-	log.Debugf("Build host spec %#v", spec)
-	return spec
-}
-func (d *Driver) buildSakuraDiskSpec() *sacloud.Disk {
-
-	spec := d.Client.NewDisk()
-	spec.Name = d.serverConfig.DiskName
-	spec.SizeMB = d.serverConfig.DiskSize
-	spec.Connection = sacloud.EDiskConnection(d.serverConfig.DiskConnection)
-
-	archiveID, _ := api.ToSakuraID(d.serverConfig.DiskSourceArchiveID)
-	spec.SetSourceArchive(archiveID)
-	if d.serverConfig.DiskPlan == "2" {
-		spec.SetDiskPlanToHDD()
-	} else {
-		spec.SetDiskPlanToSSD()
+	switch d.serverConfig.InterfaceDriver {
+	case "virtio":
+		b.SetInterfaceDriver(sacloud.InterfaceDriverVirtIO)
+	case "e1000":
+		b.SetInterfaceDriver(sacloud.InterfaceDriverE1000)
 	}
 
-	log.Debugf("Build disk spec %#v", spec)
-	return spec
-}
-
-func (d *Driver) buildSakuraDiskEditSpec(publicKey string, noteIDs []string) *sacloud.DiskEditValue {
-	notes := make([]*sacloud.Resource, len(noteIDs))
-	for n := range noteIDs {
-		id, _ := api.ToSakuraID(noteIDs[n])
-		notes[n] = &sacloud.Resource{ID: id}
+	// set disk spec
+	b.SetDiskSize(d.serverConfig.DiskSize)
+	b.SetDiskPlan(d.serverConfig.DiskPlan)
+	switch d.serverConfig.DiskConnection {
+	case "virtio":
+		b.SetDiskConnection(sacloud.DiskConnectionVirtio)
+	case "ide":
+		b.SetDiskConnection(sacloud.DiskConnectionIDE)
 	}
 
-	pAuth := !d.serverConfig.EnablePWAuth
-
-	spec := &sacloud.DiskEditValue{
-		Password: &d.serverConfig.Password,
-		SSHKey: &sacloud.SSHKey{
-			PublicKey: publicKey,
-		},
-		DisablePWAuth: &pAuth,
-		Notes:         notes[:],
+	// edit disk params
+	b.AddSSHKey(publicKey)
+	b.SetDisablePWAuth(!d.serverConfig.EnablePWAuth)
+	if d.serverConfig.IsUbuntu() {
+		// add startup-script for allow sudo by ubuntu user
+		b.AddNote(sakuraAllowSudoScriptBody)
+	} else if d.serverConfig.IsCentOS() {
+		b.AddNote(fmt.Sprintf(sakuraInstallNetToolsScriptBody, d.EnginePort))
 	}
-	log.Debugf("Build disk edit spec %#v", spec)
-	return spec
+
+	b.SetNotesEphemeral(true)
+	b.SetSSHKeysEphemeral(true)
+
+	// event handlers(for logging)
+	b.SetEventHandler(builder.ServerBuildOnCreateServerBefore, func(_ *builder.ServerBuildValue, _ *builder.ServerBuildResult) {
+		log.Infof("Creating server...")
+	})
+	b.SetEventHandler(builder.ServerBuildOnBootBefore, func(_ *builder.ServerBuildValue, _ *builder.ServerBuildResult) {
+		log.Infof("Booting server...")
+	})
+	b.SetDiskEventHandler(builder.DiskBuildOnCreateDiskBefore, func(_ *builder.DiskBuildValue, _ *builder.DiskBuildResult) {
+		log.Infof("Creating disk...")
+	})
+	b.SetDiskEventHandler(builder.DiskBuildOnEditDiskBefore, func(_ *builder.DiskBuildValue, _ *builder.DiskBuildResult) {
+		log.Infof("Editing disk...")
+	})
+
+	log.Debugf("Build host spec %#v", b)
+	return b
 }
 
 func (d *Driver) createSSHKey() (string, error) {
@@ -564,29 +396,7 @@ func (d *Driver) Kill() error {
 func (d *Driver) Remove() error {
 	log.Infof("Removing sakura cloud server ...")
 
-	if d.DNSZone != "" {
-		log.Infof("Removing DNS Record ...")
-		ip, _ := d.GetIP()
-		err := d.getClient().DeleteDnsRecord(d.DNSZone, d.GetMachineName(), ip)
-		if err != nil {
-			log.Errorf("Error deleting dns: %v", err)
-		}
-		log.Infof("Removed DNS Record.")
-	}
-
-	if d.GSLB != "" {
-		log.Infof("Removing GSLB server ...")
-		ip, _ := d.GetIP()
-		err := d.getClient().DeleteGslbServer(d.GSLB, ip)
-		if err != nil {
-			log.Errorf("Error deleting GSLB: %v", err)
-		}
-		log.Infof("Removed GSLB. Wait 30s ...")
-		time.Sleep(30 * time.Second)
-		log.Infof("Done.")
-	}
-
-	err := d.Stop()
+	err := d.Kill()
 	if err != nil {
 		log.Errorf("Error stopping server: %v", err)
 	} else {

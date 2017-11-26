@@ -28,7 +28,7 @@ func main() {
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "This is a Docker Machine plugin binary. Please use it through the main 'docker-machine' binary."
 	app.Author = "Kazumichi Yamamoto(yamamoto.febc@gmail.com)"
-	app.Email = "https://github.com/yamamoto-febc/docker-machine-sakuracloud/"
+	app.Email = "yamamoto.febc@gmail.com"
 	app.Version = version.FullVersion()
 	app.Action = func(c *cli.Context) {
 		plugin.RegisterDriver(driver.NewDriver("", ""))

@@ -4,7 +4,7 @@ import "fmt"
 
 var (
 	// Version return version no
-	Version = "0.0.15"
+	Version = "1.0.0"
 	// GitCommit return Git commit
 	GitCommit = "HEAD"
 )

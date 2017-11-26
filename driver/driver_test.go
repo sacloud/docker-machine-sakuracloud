@@ -87,13 +87,6 @@ func getTestDriver() (*Driver, error) {
 	return drv, nil
 }
 
-func TestHostnameDefaultsToMachineName(t *testing.T) {
-	d, err := getTestDriver()
-	if assert.NoError(t, err) {
-		assert.Equal(t, machineTestName, d.serverConfig.HostName)
-	}
-}
-
 func TestSetConfigFromFlags(t *testing.T) {
 	driver := NewDriver("default", "path")
 

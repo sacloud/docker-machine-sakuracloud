@@ -1,4 +1,4 @@
-package api
+package sakuracloud
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ func (c *APIClient) State(strId string) (string, error) {
 		return "", fmt.Errorf("ServerID is invalid: %s", strId)
 	}
 
-	server, err := c.Client.Server.Read(id)
+	server, err := c.client.Server.Read(id)
 	if err != nil {
 		return "", err
 	}
@@ -25,7 +25,7 @@ func (c *APIClient) PowerOn(strId string) error {
 		return fmt.Errorf("ServerID is invalid: %s", strId)
 	}
 
-	_, err := c.Client.Server.Boot(id)
+	_, err := c.client.Server.Boot(id)
 	return err
 }
 
@@ -35,7 +35,7 @@ func (c *APIClient) PowerOff(strId string) error {
 	if !res {
 		return fmt.Errorf("ServerID is invalid: %s", strId)
 	}
-	_, err := c.Client.Server.Shutdown(id)
+	_, err := c.client.Server.Shutdown(id)
 	return err
 }
 
@@ -45,7 +45,7 @@ func (c *APIClient) GetIP(strId string) (string, error) {
 	if !res {
 		return "", fmt.Errorf("ServerID is invalid: %s", strId)
 	}
-	server, err := c.Client.Server.Read(id)
+	server, err := c.client.Server.Read(id)
 	if err != nil {
 		return "", err
 	}
@@ -64,6 +64,6 @@ func (c *APIClient) Delete(strId string, strDisks []string) error {
 		return fmt.Errorf("DiskIDs are invalid: %#v", strDisks)
 	}
 
-	_, err := c.Client.Server.DeleteWithDisk(id, disks)
+	_, err := c.client.Server.DeleteWithDisk(id, disks)
 	return err
 }
