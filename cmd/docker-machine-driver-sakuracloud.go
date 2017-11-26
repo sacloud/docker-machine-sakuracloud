@@ -6,8 +6,8 @@ import (
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/machine/libmachine/drivers/plugin"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/driver"
-	"github.com/yamamoto-febc/docker-machine-sakuracloud/version"
+	"github.com/sacloud/docker-machine-sakuracloud/driver"
+	"github.com/sacloud/docker-machine-sakuracloud/version"
 )
 
 var appHelpTemplate = `This is a Docker Machine plugin for SAKURA CLOUD.
@@ -28,7 +28,7 @@ func main() {
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "This is a Docker Machine plugin binary. Please use it through the main 'docker-machine' binary."
 	app.Author = "Kazumichi Yamamoto(yamamoto.febc@gmail.com)"
-	app.Email = "https://github.com/yamamoto-febc/docker-machine-sakuracloud/"
+	app.Email = "yamamoto.febc@gmail.com"
 	app.Version = version.FullVersion()
 	app.Action = func(c *cli.Context) {
 		plugin.RegisterDriver(driver.NewDriver("", ""))

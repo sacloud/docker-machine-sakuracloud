@@ -12,6 +12,9 @@ var (
 		"os-unix",
 		"os-linux",
 	}
+
+	// bundleInfoWindowsHostClass ディスクの編集可否判定に用いる、BundleInfoでのWindows判定文字列
+	bundleInfoWindowsHostClass = "ms_windows"
 )
 
 // DiskAPI ディスクAPI
@@ -243,7 +246,7 @@ func (api *DiskAPI) CanEditDisk(id int64) (bool, error) {
 	}
 
 	// BundleInfoがあれば編集不可
-	if disk.BundleInfo != nil {
+	if disk.BundleInfo != nil && disk.BundleInfo.HostClass == bundleInfoWindowsHostClass {
 		// Windows
 		return false, nil
 	}
@@ -270,5 +273,43 @@ func (api *DiskAPI) CanEditDisk(id int64) (bool, error) {
 	}
 
 	return false, nil
+
+}
+
+// GetPublicArchiveIDFromAncestors 祖先の中からパブリックアーカイブのIDを検索
+func (api *DiskAPI) GetPublicArchiveIDFromAncestors(id int64) (int64, bool) {
+
+	emptyID := int64(0)
+
+	disk, err := api.Read(id)
+	if err != nil {
+		return emptyID, false
+	}
+
+	if disk == nil {
+		return emptyID, false
+	}
+
+	// BundleInfoがあれば編集不可
+	if disk.BundleInfo != nil && disk.BundleInfo.HostClass == bundleInfoWindowsHostClass {
+		// Windows
+		return emptyID, false
+	}
+
+	for _, t := range allowDiskEditTags {
+		if disk.HasTag(t) {
+			// 対応OSインストール済みディスク
+			return disk.ID, true
+		}
+	}
+
+	// ここまできても判定できないならソースに投げる
+	if disk.SourceDisk != nil && disk.SourceDisk.Availability != "discontinued" {
+		return api.client.Disk.GetPublicArchiveIDFromAncestors(disk.SourceDisk.ID)
+	}
+	if disk.SourceArchive != nil && disk.SourceArchive.Availability != "discontinued" {
+		return api.client.Archive.GetPublicArchiveIDFromAncestors(disk.SourceArchive.ID)
+	}
+	return emptyID, false
 
 }

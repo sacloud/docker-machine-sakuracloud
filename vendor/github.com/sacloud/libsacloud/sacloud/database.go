@@ -9,20 +9,18 @@ import (
 type Database struct {
 	*Appliance // アプライアンス共通属性
 
-	Remark           *DatabaseRemark           `json:",omitempty"` // リマーク
-	Settings         *DatabaseSettings         `json:",omitempty"` // データベース設定
-	SettingsResponse *DatabaseSettingsResponse `json:",omitempty"` // データベース固有設定
-
+	Remark   *DatabaseRemark   `json:",omitempty"` // リマーク
+	Settings *DatabaseSettings `json:",omitempty"` // データベース設定
 }
 
 // DatabaseRemark データベースリマーク
 type DatabaseRemark struct {
 	*ApplianceRemarkBase
-	propPlanID                        // プランID
-	DBConf     *DatabaseCommonRemarks // コンフィグ
-	Network    *DatabaseRemarkNetwork // ネットワーク
-
-	Zone struct { // ゾーン
+	propPlanID                             // プランID
+	DBConf          *DatabaseCommonRemarks // コンフィグ
+	Network         *DatabaseRemarkNetwork // ネットワーク
+	SourceAppliance *Resource              // クローン元DB
+	Zone            struct {               // ゾーン
 		ID json.Number `json:",omitempty"` // ゾーンID
 	}
 }
@@ -96,16 +94,17 @@ type DatabasePlan int
 var (
 	// DatabasePlanMini ミニプラン(後方互換用)
 	DatabasePlanMini = DatabasePlan(10)
-	// DatabasePlan10G
+	// DatabasePlan10G 10Gプラン
 	DatabasePlan10G = DatabasePlan(10)
-	// DatabasePlan30G
+	// DatabasePlan30G 30Gプラン
 	DatabasePlan30G = DatabasePlan(30)
-	// DatabasePlan90G
+	// DatabasePlan90G 90Gプラン
 	DatabasePlan90G = DatabasePlan(90)
-	// DatabasePlan240G
+	// DatabasePlan240G 240Gプラン
 	DatabasePlan240G = DatabasePlan(240)
 )
 
+// AllowDatabasePlans 指定可能なデータベースプラン
 func AllowDatabasePlans() []int {
 	return []int{
 		int(DatabasePlan10G),
@@ -123,9 +122,9 @@ type DatabaseBackupSetting struct {
 
 // DatabaseCommonSetting 共通設定
 type DatabaseCommonSetting struct {
-	AdminPassword string        `json:",omitempty"` // 管理者パスワード
 	DefaultUser   string        `json:",omitempty"` // ユーザー名
 	UserPassword  string        `json:",omitempty"` // ユーザーパスワード
+	WebUI         interface{}   `json:",omitempty"` // WebUIのIPアドレス or FQDN
 	ServicePort   string        // ポート番号
 	SourceNetwork SourceNetwork // 接続許可ネットワーク
 }
@@ -149,11 +148,18 @@ func (s *SourceNetwork) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// DatabaseSettingsResponse データベース固有設定
-type DatabaseSettingsResponse struct {
-	DBConf interface{} `json:",omitempty"` // DBConf データベース設定
+// MarshalJSON JSONマーシャル(配列と文字列が混在するためここで対応)
+func (s *SourceNetwork) MarshalJSON() ([]byte, error) {
+	if s == nil {
+		return []byte(""), nil
+	}
 
-	*EServerInstanceStatus // インスタンス
+	list := []string(*s)
+	if len(list) == 0 || (len(list) == 1 && list[0] == "") {
+		return []byte(`""`), nil
+	}
+
+	return json.Marshal(list)
 }
 
 // CreateDatabaseValue データベース作成用パラメータ
@@ -174,11 +180,13 @@ type CreateDatabaseValue struct {
 	Description      string    // 説明
 	Tags             []string  // タグ
 	Icon             *Resource // アイコン
+	WebUI            bool      // WebUI有効
 	DatabaseName     string    // データベース名
 	DatabaseRevision string    // リビジョン
 	DatabaseTitle    string    // データベースタイトル
 	DatabaseVersion  string    // データベースバージョン
 	ReplicaUser      string    // ReplicaUser レプリケーションユーザー
+	SourceAppliance  *Resource // クローン元DB
 	//ReplicaPassword  string // in current API version , setted admin password
 }
 
@@ -201,6 +209,15 @@ func NewCreateMariaDBDatabaseValue() *CreateDatabaseValue {
 		DatabaseTitle:    "MariaDB 10.1.21",
 		DatabaseVersion:  "10.1",
 		// ReplicaUser:      "replica",
+	}
+}
+
+// NewCloneDatabaseValue クローンDB作成用パラメータ
+func NewCloneDatabaseValue(db *Database) *CreateDatabaseValue {
+	return &CreateDatabaseValue{
+		DatabaseName:    db.Remark.DBConf.Common.DatabaseName,
+		DatabaseVersion: db.Remark.DBConf.Common.DatabaseVersion,
+		SourceAppliance: NewResource(db.ID),
 	}
 }
 
@@ -257,7 +274,8 @@ func CreateNewDatabase(values *CreateDatabaseValue) *Database {
 				},
 			},
 			// Plan
-			propPlanID: propPlanID{Plan: &Resource{ID: int64(values.Plan)}},
+			propPlanID:      propPlanID{Plan: &Resource{ID: int64(values.Plan)}},
+			SourceAppliance: values.SourceAppliance,
 		},
 		// Settings
 		Settings: &DatabaseSettings{
@@ -273,8 +291,6 @@ func CreateNewDatabase(values *CreateDatabaseValue) *Database {
 				},
 				// Common
 				Common: &DatabaseCommonSetting{
-					// AdminPassword
-					AdminPassword: values.AdminPassword,
 					// DefaultUser
 					DefaultUser: values.DefaultUser,
 					// UserPassword
@@ -288,27 +304,113 @@ func CreateNewDatabase(values *CreateDatabaseValue) *Database {
 		},
 	}
 
-	if values.SwitchID == "" || values.SwitchID == "shared" {
-		db.Remark.Switch = &ApplianceRemarkSwitch{
-			// Scope
-			propScope: propScope{Scope: "shared"},
-		}
-	} else {
-		db.Remark.Switch = &ApplianceRemarkSwitch{
-			// ID
-			ID: values.SwitchID,
-		}
-		db.Remark.Network = &DatabaseRemarkNetwork{
-			// NetworkMaskLen
-			NetworkMaskLen: values.MaskLen,
-			// DefaultRoute
-			DefaultRoute: values.DefaultRoute,
-		}
+	db.Remark.Switch = &ApplianceRemarkSwitch{
+		// ID
+		ID: values.SwitchID,
+	}
+	db.Remark.Network = &DatabaseRemarkNetwork{
+		// NetworkMaskLen
+		NetworkMaskLen: values.MaskLen,
+		// DefaultRoute
+		DefaultRoute: values.DefaultRoute,
+	}
 
-		db.Remark.Servers = []interface{}{
-			map[string]string{"IPAddress": values.IPAddress1},
-		}
+	db.Remark.Servers = []interface{}{
+		map[string]string{"IPAddress": values.IPAddress1},
+	}
 
+	if values.WebUI {
+		db.Settings.DBConf.Common.WebUI = values.WebUI
+	}
+
+	return db
+}
+
+// CloneNewDatabase データベース作成
+func CloneNewDatabase(values *CreateDatabaseValue) *Database {
+	db := &Database{
+		// Appliance
+		Appliance: &Appliance{
+			// Class
+			Class: "database",
+			// Name
+			propName: propName{Name: values.Name},
+			// Description
+			propDescription: propDescription{Description: values.Description},
+			// TagsType
+			propTags: propTags{
+				// Tags
+				Tags: values.Tags,
+			},
+			// Icon
+			propIcon: propIcon{
+				&Icon{
+					// Resource
+					Resource: values.Icon,
+				},
+			},
+			// Plan
+			//propPlanID: propPlanID{Plan: &Resource{ID: int64(values.Plan)}},
+		},
+		// Remark
+		Remark: &DatabaseRemark{
+			// ApplianceRemarkBase
+			ApplianceRemarkBase: &ApplianceRemarkBase{
+				// Servers
+				Servers: []interface{}{""},
+			},
+			// DBConf
+			DBConf: &DatabaseCommonRemarks{
+				// Common
+				Common: &DatabaseCommonRemark{
+					DatabaseName:    values.DatabaseName,
+					DatabaseVersion: values.DatabaseVersion,
+				},
+			},
+			// Plan
+			propPlanID:      propPlanID{Plan: &Resource{ID: int64(values.Plan)}},
+			SourceAppliance: values.SourceAppliance,
+		},
+		// Settings
+		Settings: &DatabaseSettings{
+			// DBConf
+			DBConf: &DatabaseSetting{
+				// Backup
+				Backup: &DatabaseBackupSetting{
+					// Rotate
+					// Rotate: values.BackupRotate,
+					Rotate: 8,
+					// Time
+					Time: values.BackupTime,
+				},
+				// Common
+				Common: &DatabaseCommonSetting{
+					// SourceNetwork
+					SourceNetwork: SourceNetwork(values.SourceNetwork),
+					// ServicePort
+					ServicePort: values.ServicePort,
+				},
+			},
+		},
+	}
+
+	db.Remark.Switch = &ApplianceRemarkSwitch{
+		// ID
+		ID: values.SwitchID,
+	}
+	db.Remark.Network = &DatabaseRemarkNetwork{
+		// NetworkMaskLen
+		NetworkMaskLen: values.MaskLen,
+		// DefaultRoute
+		DefaultRoute: values.DefaultRoute,
+	}
+
+	db.Remark.Servers = []interface{}{
+		map[string]string{"IPAddress": values.IPAddress1},
+	}
+
+	if values.WebUI {
+		db.Settings.DBConf.Common.WebUI = values.WebUI
 	}
 
 	return db

@@ -15,25 +15,24 @@ type ArchiveAPI struct {
 }
 
 var (
-	archiveLatestStableCentOSTags                   = []string{"current-stable", "distro-centos"}
-	archiveLatestStableUbuntuTags                   = []string{"current-stable", "distro-ubuntu"}
-	archiveLatestStableDebianTags                   = []string{"current-stable", "distro-debian"}
-	archiveLatestStableVyOSTags                     = []string{"current-stable", "distro-vyos"}
-	archiveLatestStableCoreOSTags                   = []string{"current-stable", "distro-coreos"}
-	archiveLatestStableKusanagiTags                 = []string{"current-stable", "pkg-kusanagi"}
-	archiveLatestStableSiteGuardTags                = []string{"current-stable", "pkg-siteguard"}
-	archiveLatestStableFreeBSDTags                  = []string{"current-stable", "distro-freebsd"}
-	archiveLatestStableWindows2008Tags              = []string{"os-windows", "distro-ver-2008.2"}
-	archiveLatestStableWindows2008RDSTags           = []string{"os-windows", "distro-ver-2008.2", "windows-rds"}
-	archiveLatestStableWindows2008RDSOfficeTags     = []string{"os-windows", "distro-ver-2008.2", "windows-rds", "with-office"}
-	archiveLatestStableWindows2012Tags              = []string{"os-windows", "distro-ver-2012.2"}
-	archiveLatestStableWindows2012RDSTags           = []string{"os-windows", "distro-ver-2012.2", "windows-rds"}
-	archiveLatestStableWindows2012RDSOfficeTags     = []string{"os-windows", "distro-ver-2012.2", "windows-rds", "with-office"}
-	archiveLatestStableWindows2016Tags              = []string{"os-windows", "distro-ver-2016"}
-	archiveLatestStableWindows2016RDSTags           = []string{"os-windows", "distro-ver-2016", "windows-rds"}
-	archiveLatestStableWindows2016RDSOfficeTags     = []string{"os-windows", "distro-ver-2016", "windows-rds", "with-office"}
-	archiveLatestStableWindows2016SQLServerWeb      = []string{"os-windows", "distro-ver-2016", "windows-sqlserver", "sqlserver-2016", "edition-web"}
-	archiveLatestStableWindows2016SQLServerStandard = []string{"os-windows", "distro-ver-2016", "windows-sqlserver", "sqlserver-2016", "edition-standard"}
+	archiveLatestStableCentOSTags                      = []string{"current-stable", "distro-centos"}
+	archiveLatestStableCentOS6Tags                     = []string{"distro-centos", "distro-ver-6.9"}
+	archiveLatestStableUbuntuTags                      = []string{"current-stable", "distro-ubuntu"}
+	archiveLatestStableDebianTags                      = []string{"current-stable", "distro-debian"}
+	archiveLatestStableVyOSTags                        = []string{"current-stable", "distro-vyos"}
+	archiveLatestStableCoreOSTags                      = []string{"current-stable", "distro-coreos"}
+	archiveLatestStableRancherOSTags                   = []string{"current-stable", "distro-rancheros"}
+	archiveLatestStableKusanagiTags                    = []string{"current-stable", "pkg-kusanagi"}
+	archiveLatestStableFreeBSDTags                     = []string{"current-stable", "distro-freebsd"}
+	archiveLatestStableWindows2012Tags                 = []string{"os-windows", "distro-ver-2012.2"}
+	archiveLatestStableWindows2012RDSTags              = []string{"os-windows", "distro-ver-2012.2", "windows-rds"}
+	archiveLatestStableWindows2012RDSOfficeTags        = []string{"os-windows", "distro-ver-2012.2", "windows-rds", "with-office"}
+	archiveLatestStableWindows2016Tags                 = []string{"os-windows", "distro-ver-2016"}
+	archiveLatestStableWindows2016RDSTags              = []string{"os-windows", "distro-ver-2016", "windows-rds"}
+	archiveLatestStableWindows2016RDSOfficeTags        = []string{"os-windows", "distro-ver-2016", "windows-rds", "with-office"}
+	archiveLatestStableWindows2016SQLServerWeb         = []string{"os-windows", "distro-ver-2016", "windows-sqlserver", "sqlserver-2016", "edition-web"}
+	archiveLatestStableWindows2016SQLServerStandard    = []string{"os-windows", "distro-ver-2016", "windows-sqlserver", "sqlserver-2016", "edition-standard"}
+	archiveLatestStableWindows2016SQLServerStandardAll = []string{"os-windows", "distro-ver-2016", "windows-sqlserver", "sqlserver-2016", "edition-standard", "windows-rds", "with-office"}
 )
 
 // NewArchiveAPI アーカイブAPI作成
@@ -48,25 +47,24 @@ func NewArchiveAPI(client *Client) *ArchiveAPI {
 	}
 
 	api.findFuncMapPerOSType = map[ostype.ArchiveOSTypes]func() (*sacloud.Archive, error){
-		ostype.CentOS:                       api.FindLatestStableCentOS,
-		ostype.Ubuntu:                       api.FindLatestStableUbuntu,
-		ostype.Debian:                       api.FindLatestStableDebian,
-		ostype.VyOS:                         api.FindLatestStableVyOS,
-		ostype.CoreOS:                       api.FindLatestStableCoreOS,
-		ostype.Kusanagi:                     api.FindLatestStableKusanagi,
-		ostype.SiteGuard:                    api.FindLatestStableSiteGuard,
-		ostype.FreeBSD:                      api.FindLatestStableFreeBSD,
-		ostype.Windows2008:                  api.FindLatestStableWindows2008,
-		ostype.Windows2008RDS:               api.FindLatestStableWindows2008RDS,
-		ostype.Windows2008RDSOffice:         api.FindLatestStableWindows2008RDSOffice,
-		ostype.Windows2012:                  api.FindLatestStableWindows2012,
-		ostype.Windows2012RDS:               api.FindLatestStableWindows2012RDS,
-		ostype.Windows2012RDSOffice:         api.FindLatestStableWindows2012RDSOffice,
-		ostype.Windows2016:                  api.FindLatestStableWindows2016,
-		ostype.Windows2016RDS:               api.FindLatestStableWindows2016RDS,
-		ostype.Windows2016RDSOffice:         api.FindLatestStableWindows2016RDSOffice,
-		ostype.Windows2016SQLServerWeb:      api.FindLatestStableWindows2016SQLServerWeb,
-		ostype.Windows2016SQLServerStandard: api.FindLatestStableWindows2016SQLServerStandard,
+		ostype.CentOS:                          api.FindLatestStableCentOS,
+		ostype.CentOS6:                         api.FindLatestStableCentOS6,
+		ostype.Ubuntu:                          api.FindLatestStableUbuntu,
+		ostype.Debian:                          api.FindLatestStableDebian,
+		ostype.VyOS:                            api.FindLatestStableVyOS,
+		ostype.CoreOS:                          api.FindLatestStableCoreOS,
+		ostype.RancherOS:                       api.FindLatestStableRancherOS,
+		ostype.Kusanagi:                        api.FindLatestStableKusanagi,
+		ostype.FreeBSD:                         api.FindLatestStableFreeBSD,
+		ostype.Windows2012:                     api.FindLatestStableWindows2012,
+		ostype.Windows2012RDS:                  api.FindLatestStableWindows2012RDS,
+		ostype.Windows2012RDSOffice:            api.FindLatestStableWindows2012RDSOffice,
+		ostype.Windows2016:                     api.FindLatestStableWindows2016,
+		ostype.Windows2016RDS:                  api.FindLatestStableWindows2016RDS,
+		ostype.Windows2016RDSOffice:            api.FindLatestStableWindows2016RDSOffice,
+		ostype.Windows2016SQLServerWeb:         api.FindLatestStableWindows2016SQLServerWeb,
+		ostype.Windows2016SQLServerStandard:    api.FindLatestStableWindows2016SQLServerStandard,
+		ostype.Windows2016SQLServerStandardAll: api.FindLatestStableWindows2016SQLServerStandardAll,
 	}
 
 	return api
@@ -171,7 +169,7 @@ func (api *ArchiveAPI) CanEditDisk(id int64) (bool, error) {
 	}
 
 	// BundleInfoがあれば編集不可
-	if archive.BundleInfo != nil {
+	if archive.BundleInfo != nil && archive.BundleInfo.HostClass == bundleInfoWindowsHostClass {
 		// Windows
 		return false, nil
 	}
@@ -194,9 +192,52 @@ func (api *ArchiveAPI) CanEditDisk(id int64) (bool, error) {
 
 }
 
+// GetPublicArchiveIDFromAncestors 祖先の中からパブリックアーカイブのIDを検索
+func (api *ArchiveAPI) GetPublicArchiveIDFromAncestors(id int64) (int64, bool) {
+
+	emptyID := int64(0)
+
+	archive, err := api.Read(id)
+	if err != nil {
+		return emptyID, false
+	}
+
+	if archive == nil {
+		return emptyID, false
+	}
+
+	// BundleInfoがあれば編集不可
+	if archive.BundleInfo != nil && archive.BundleInfo.HostClass == bundleInfoWindowsHostClass {
+		// Windows
+		return emptyID, false
+	}
+
+	for _, t := range allowDiskEditTags {
+		if archive.HasTag(t) {
+			// 対応OSインストール済みディスク
+			return archive.ID, true
+		}
+	}
+
+	// ここまできても判定できないならソースに投げる
+	if archive.SourceDisk != nil && archive.SourceDisk.Availability != "discontinued" {
+		return api.client.Disk.GetPublicArchiveIDFromAncestors(archive.SourceDisk.ID)
+	}
+	if archive.SourceArchive != nil && archive.SourceArchive.Availability != "discontinued" {
+		return api.client.Archive.GetPublicArchiveIDFromAncestors(archive.SourceArchive.ID)
+	}
+	return emptyID, false
+
+}
+
 // FindLatestStableCentOS 安定版最新のCentOSパブリックアーカイブを取得
 func (api *ArchiveAPI) FindLatestStableCentOS() (*sacloud.Archive, error) {
 	return api.findByOSTags(archiveLatestStableCentOSTags)
+}
+
+// FindLatestStableCentOS6 安定版最新のCentOS6パブリックアーカイブを取得
+func (api *ArchiveAPI) FindLatestStableCentOS6() (*sacloud.Archive, error) {
+	return api.findByOSTags(archiveLatestStableCentOS6Tags)
 }
 
 // FindLatestStableDebian 安定版最新のDebianパブリックアーカイブを取得
@@ -219,40 +260,19 @@ func (api *ArchiveAPI) FindLatestStableCoreOS() (*sacloud.Archive, error) {
 	return api.findByOSTags(archiveLatestStableCoreOSTags)
 }
 
+// FindLatestStableRancherOS 安定版最新のRancherOSパブリックアーカイブを取得
+func (api *ArchiveAPI) FindLatestStableRancherOS() (*sacloud.Archive, error) {
+	return api.findByOSTags(archiveLatestStableRancherOSTags)
+}
+
 // FindLatestStableKusanagi 安定版最新のKusanagiパブリックアーカイブを取得
 func (api *ArchiveAPI) FindLatestStableKusanagi() (*sacloud.Archive, error) {
 	return api.findByOSTags(archiveLatestStableKusanagiTags)
 }
 
-// FindLatestStableSiteGuard 安定版最新のSiteGuardパブリックアーカイブを取得
-func (api *ArchiveAPI) FindLatestStableSiteGuard() (*sacloud.Archive, error) {
-	return api.findByOSTags(archiveLatestStableSiteGuardTags)
-}
-
 // FindLatestStableFreeBSD 安定版最新のFreeBSDパブリックアーカイブを取得
 func (api *ArchiveAPI) FindLatestStableFreeBSD() (*sacloud.Archive, error) {
 	return api.findByOSTags(archiveLatestStableFreeBSDTags)
-}
-
-// FindLatestStableWindows2008 安定版最新のWindows2008パブリックアーカイブを取得
-func (api *ArchiveAPI) FindLatestStableWindows2008() (*sacloud.Archive, error) {
-	return api.findByOSTags(archiveLatestStableWindows2008Tags, map[string]interface{}{
-		"Name": "Windows Server 2008 R2 Datacenter Edition",
-	})
-}
-
-// FindLatestStableWindows2008RDS 安定版最新のWindows2008RDSパブリックアーカイブを取得
-func (api *ArchiveAPI) FindLatestStableWindows2008RDS() (*sacloud.Archive, error) {
-	return api.findByOSTags(archiveLatestStableWindows2008RDSTags, map[string]interface{}{
-		"Name": "Windows Server 2008 R2 for RDS",
-	})
-}
-
-// FindLatestStableWindows2008RDSOffice 安定版最新のWindows2008RDS(Office)パブリックアーカイブを取得
-func (api *ArchiveAPI) FindLatestStableWindows2008RDSOffice() (*sacloud.Archive, error) {
-	return api.findByOSTags(archiveLatestStableWindows2008RDSOfficeTags, map[string]interface{}{
-		"Name": "Windows Server 2008 R2 for RDS(MS Office付)",
-	})
 }
 
 // FindLatestStableWindows2012 安定版最新のWindows2012パブリックアーカイブを取得
@@ -297,17 +317,24 @@ func (api *ArchiveAPI) FindLatestStableWindows2016RDSOffice() (*sacloud.Archive,
 	})
 }
 
-// FindLatestStableWindows2016RDSOffice 安定版最新のWindows2016RDS(Office)パブリックアーカイブを取得
+// FindLatestStableWindows2016SQLServerWeb 安定版最新のWindows2016 SQLServer(Web) パブリックアーカイブを取得
 func (api *ArchiveAPI) FindLatestStableWindows2016SQLServerWeb() (*sacloud.Archive, error) {
 	return api.findByOSTags(archiveLatestStableWindows2016SQLServerWeb, map[string]interface{}{
 		"Name": "Windows Server 2016 for MS SQL 2016(Web)",
 	})
 }
 
-// FindLatestStableWindows2016RDSOffice 安定版最新のWindows2016RDS(Office)パブリックアーカイブを取得
+// FindLatestStableWindows2016SQLServerStandard 安定版最新のWindows2016 SQLServer(Standard) パブリックアーカイブを取得
 func (api *ArchiveAPI) FindLatestStableWindows2016SQLServerStandard() (*sacloud.Archive, error) {
 	return api.findByOSTags(archiveLatestStableWindows2016SQLServerStandard, map[string]interface{}{
 		"Name": "Windows Server 2016 for MS SQL 2016(Standard)",
+	})
+}
+
+// FindLatestStableWindows2016SQLServerStandardAll 安定版最新のWindows2016 SQLServer(RDS+Office) パブリックアーカイブを取得
+func (api *ArchiveAPI) FindLatestStableWindows2016SQLServerStandardAll() (*sacloud.Archive, error) {
+	return api.findByOSTags(archiveLatestStableWindows2016SQLServerStandard, map[string]interface{}{
+		"Name": "Windows Server 2016 for MS SQL 2016(Std) with RDS / MS Office",
 	})
 }
 

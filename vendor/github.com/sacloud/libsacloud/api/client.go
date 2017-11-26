@@ -10,11 +10,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
-const (
-	sakuraCloudAPIRoot = "https://secure.sakura.ad.jp/cloud/zone"
+var (
+	// SakuraCloudAPIRoot APIリクエスト送信先ルートURL(末尾にスラッシュを含まない)
+	SakuraCloudAPIRoot = "https://secure.sakura.ad.jp/cloud/zone"
 )
 
 // Client APIクライアント
@@ -67,7 +69,7 @@ func (c *Client) Clone() *Client {
 }
 
 func (c *Client) getEndpoint() string {
-	return fmt.Sprintf("%s/%s", sakuraCloudAPIRoot, c.Zone)
+	return fmt.Sprintf("%s/%s", SakuraCloudAPIRoot, c.Zone)
 }
 
 func (c *Client) isOkStatus(code int) bool {
@@ -97,10 +99,13 @@ func (c *Client) isOkStatus(code int) bool {
 func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error) {
 	var (
 		client = &http.Client{}
-		url    = fmt.Sprintf("%s/%s", c.getEndpoint(), uri)
 		err    error
 		req    *http.Request
 	)
+	var url = uri
+	if !strings.HasPrefix(url, "https://") {
+		url = fmt.Sprintf("%s/%s", c.getEndpoint(), uri)
+	}
 
 	if body != nil {
 		var bodyJSON []byte
@@ -109,7 +114,7 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 			return nil, err
 		}
 		if method == "GET" {
-			url = fmt.Sprintf("%s/%s?%s", c.getEndpoint(), uri, bytes.NewBuffer(bodyJSON))
+			url = fmt.Sprintf("%s?%s", url, bytes.NewBuffer(bodyJSON))
 			req, err = http.NewRequest(method, url, nil)
 		} else {
 			req, err = http.NewRequest(method, url, bytes.NewBuffer(bodyJSON))
@@ -166,7 +171,7 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 		if err != nil {
 			return nil, fmt.Errorf("Error in response: %s", string(data))
 		}
-		return nil, fmt.Errorf("Error in response: %#v", errResponse)
+		return nil, NewError(resp.StatusCode, errResponse)
 
 	}
 	if err != nil {
@@ -197,8 +202,11 @@ type API struct {
 	IPv6Net       *IPv6NetAPI       // IPv6ネットワークAPI
 	License       *LicenseAPI       // ライセンスAPI
 	LoadBalancer  *LoadBalancerAPI  // ロードバランサーAPI
+	NewsFeed      *NewsFeedAPI      // フィード(障害/メンテナンス情報)API
+	NFS           *NFSAPI           // NFS API
 	Note          *NoteAPI          // スタートアップスクリプトAPI
 	PacketFilter  *PacketFilterAPI  // パケットフィルタAPI
+	PrivateHost   *PrivateHostAPI   // 専有ホストAPI
 	Product       *ProductAPI       // 製品情報API
 	Server        *ServerAPI        // サーバーAPI
 	SimpleMonitor *SimpleMonitorAPI // シンプル監視API
@@ -309,6 +317,16 @@ func (api *API) GetLoadBalancerAPI() *LoadBalancerAPI {
 	return api.LoadBalancer
 }
 
+// GetNewsFeedAPI フィード(障害/メンテナンス情報)API取得
+func (api *API) GetNewsFeedAPI() *NewsFeedAPI {
+	return api.NewsFeed
+}
+
+// GetNFSAPI NFS API取得
+func (api *API) GetNFSAPI() *NFSAPI {
+	return api.NFS
+}
+
 // GetNoteAPI スタートアップAPI取得
 func (api *API) GetNoteAPI() *NoteAPI {
 	return api.Note
@@ -317,6 +335,11 @@ func (api *API) GetNoteAPI() *NoteAPI {
 // GetPacketFilterAPI パケットフィルタAPI取得
 func (api *API) GetPacketFilterAPI() *PacketFilterAPI {
 	return api.PacketFilter
+}
+
+// GetPrivateHostAPI 専有ホストAPI取得
+func (api *API) GetPrivateHostAPI() *PrivateHostAPI {
+	return api.PrivateHost
 }
 
 // GetProductServerAPI サーバープランAPI取得
@@ -381,11 +404,12 @@ func (api *API) GetWebAccelAPI() *WebAccelAPI {
 
 // ProductAPI 製品情報関連API群
 type ProductAPI struct {
-	Server   *ProductServerAPI   // サーバープランAPI
-	License  *ProductLicenseAPI  // ライセンスプランAPI
-	Disk     *ProductDiskAPI     // ディスクプランAPI
-	Internet *ProductInternetAPI // ルータープランAPI
-	Price    *PublicPriceAPI     // 価格情報API
+	Server      *ProductServerAPI      // サーバープランAPI
+	License     *ProductLicenseAPI     // ライセンスプランAPI
+	Disk        *ProductDiskAPI        // ディスクプランAPI
+	Internet    *ProductInternetAPI    // ルータープランAPI
+	PrivateHost *ProductPrivateHostAPI // 専有ホストプランAPI
+	Price       *PublicPriceAPI        // 価格情報API
 }
 
 // GetProductServerAPI サーバープランAPI取得
@@ -406,6 +430,11 @@ func (api *ProductAPI) GetProductDiskAPI() *ProductDiskAPI {
 // GetProductInternetAPI ルータープランAPI取得
 func (api *ProductAPI) GetProductInternetAPI() *ProductInternetAPI {
 	return api.Internet
+}
+
+// GetProductPrivateHostAPI 専有ホストプラン取得API
+func (api *ProductAPI) GetProductPrivateHostAPI() *ProductPrivateHostAPI {
+	return api.PrivateHost
 }
 
 // GetPublicPriceAPI 価格情報API取得
@@ -453,14 +482,18 @@ func newAPI(client *Client) *API {
 		IPv6Net:      NewIPv6NetAPI(client),
 		License:      NewLicenseAPI(client),
 		LoadBalancer: NewLoadBalancerAPI(client),
+		NewsFeed:     NewNewsFeedAPI(client),
+		NFS:          NewNFSAPI(client),
 		Note:         NewNoteAPI(client),
 		PacketFilter: NewPacketFilterAPI(client),
+		PrivateHost:  NewPrivateHostAPI(client),
 		Product: &ProductAPI{
-			Server:   NewProductServerAPI(client),
-			License:  NewProductLicenseAPI(client),
-			Disk:     NewProductDiskAPI(client),
-			Internet: NewProductInternetAPI(client),
-			Price:    NewPublicPriceAPI(client),
+			Server:      NewProductServerAPI(client),
+			License:     NewProductLicenseAPI(client),
+			Disk:        NewProductDiskAPI(client),
+			Internet:    NewProductInternetAPI(client),
+			PrivateHost: NewProductPrivateHostAPI(client),
+			Price:       NewPublicPriceAPI(client),
 		},
 		Server:        NewServerAPI(client),
 		SimpleMonitor: NewSimpleMonitorAPI(client),
