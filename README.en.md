@@ -31,7 +31,7 @@ docker run -it --rm -e MACHINE_STORAGE_PATH=$HOME/.docker/machine \
 
 ## Install Driver
 
-### macOS(HomeBrew)
+### macOS(HomeBrew) or Linux(LinuxBrew)
 
     $ brew tap sacloud/docker-machine-sakuracloud
     $ brew install docker-machine-sakuracloud

@@ -32,7 +32,7 @@ docker run -it --rm -e MACHINE_STORAGE_PATH=$HOME/.docker/machine \
 
 ## インストール
 
-### macOS(HomeBrew)
+### macOS(HomeBrew) または Linux(LinuxBrew)
 
     $ brew tap sacloud/docker-machine-sakuracloud
     $ brew install docker-machine-sakuracloud
