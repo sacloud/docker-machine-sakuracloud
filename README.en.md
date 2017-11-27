@@ -7,13 +7,13 @@ to create Docker hosts on [SAKURA CLOUD](http://cloud.sakura.ad.jp)
 
 [![Build Status](https://travis-ci.org/sacloud/docker-machine-sakuracloud.svg?branch=master)](https://travis-ci.org/sacloud/docker-machine-sakuracloud)
 
-#### Running with Docker
+## Quick Start: Running with Docker
 
 We released docker image that bundle docker-machine and docker-machine-driver-sakuracloud.
 
 [sacloud/docker-machine](https://hub.docker.com/r/sacloud/docker-machine/)
 
-If you don't have docker, try [Run with local install](#run_with_local_install).
+If you don't have docker, try [Install Driver](#install-driver).
 
 ```bash
 docker run [docker run options] sacloud/docker-machine [docker-machine options] <machine-name>
@@ -29,7 +29,15 @@ docker run -it --rm -e MACHINE_STORAGE_PATH=$HOME/.docker/machine \
                     sacloud/docker-machine create -d sakuracloud sakura-dev
 ```
 
-#### Run with local install
+## Install Driver
+
+### macOS(HomeBrew)
+
+    $ brew tap sacloud/docker-machine-sakuracloud
+    $ brew install docker-machine-sakuracloud
+
+
+### Manual Install
 
 download the binary `docker-machine-driver-sakuracloud`
 and  make it available by `$PATH`, for example by putting it to `/usr/local/bin/`

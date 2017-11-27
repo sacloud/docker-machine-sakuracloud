@@ -6,15 +6,13 @@
 
 [![Build Status](https://travis-ci.org/sacloud/docker-machine-sakuracloud.svg?branch=master)](https://travis-ci.org/sacloud/docker-machine-sakuracloud)
 
-## 実行方法
-
-### Dockerコンテナでの実行
+## Quick Start: Dockerコンテナでの実行
 
 docker-machineとdocker-machine-sakuracloud同梱したDockerイメージを用意しています。
 
 [sacloud/docker-machine](https://hub.docker.com/r/sacloud/docker-machine/)
 
-お手元のマシンにDockerが無い場合、以降の[ローカルインストール](#ローカルインストールでの実行)を参照ください。
+お手元のマシンにDockerが無い場合、以降の[インストール](#インストール)を参照ください。
 
 Dockerでの実行方法
 
@@ -32,8 +30,14 @@ docker run -it --rm -e MACHINE_STORAGE_PATH=$HOME/.docker/machine \
                     sacloud/docker-machine create -d sakuracloud sakura-dev
 ```
 
+## インストール
 
-## ローカルインストールでの実行
+### macOS(HomeBrew)
+
+    $ brew tap sacloud/docker-machine-sakuracloud
+    $ brew install docker-machine-sakuracloud
+
+### マニュアルインストール
 
 あらかじめ`docker-machine`をインストールしておいてください。
 
