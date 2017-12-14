@@ -62,7 +62,7 @@ Options:
  - `--sakuracloud-access-token`: **required** Your personal access token for the SAKURA CLOUD API.
  - `--sakuracloud-access-token-secret`: **required** Your personal access token secret for the SAKURA CLOUD API.
  - `--sakuracloud-zone`: Zone [`is1a` / `is1b` / `tk1a`]
- - `--sakuracloud-os-type`: OS type [`rancheros` / `centos` / `ubuntu`]
+ - `--sakuracloud-os-type`: OS type [`rancheros` / `centos` / `ubuntu` / `coreos`]
  - `--sakuracloud-core`: Number of CPU-core
  - `--sakuracloud-memory`: Size of memory (In GB)
  - `--sakuracloud-disk-connection`: Disk connection type(`virtio` or `ide`)

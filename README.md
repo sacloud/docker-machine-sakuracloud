@@ -70,7 +70,7 @@ $ docker-machine create --driver=sakuracloud \
  - `--sakuracloud-access-token`: **必須** アクセストークン
  - `--sakuracloud-access-token-secret`: **必須** アクセストークンシークレット
  - `--sakuracloud-zone`: 対象ゾーン[`is1a` / `is1b` / `tk1a`]
- - `--sakuracloud-os-type`: OS[`rancheros` / `centos` / `ubuntu`]
+ - `--sakuracloud-os-type`: OS[`rancheros` / `centos` / `ubuntu` / `coreos`]
  - `--sakuracloud-core`: CPUコア数
  - `--sakuracloud-memory`: メモリサイズ(GB単位)
  - `--sakuracloud-disk-connection`: ディスクインターフェース (`virtio` or `ide`)

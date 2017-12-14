@@ -21,7 +21,7 @@ var (
 )
 
 var (
-	allowOSTypes          = []string{"rancheros", "centos", "ubuntu"}
+	allowOSTypes          = []string{"rancheros", "centos", "ubuntu", "coreos"}
 	allowDiskPlans        = []string{"hdd", "ssd"}
 	allowSSDSizes         = []int{20, 40, 100, 250, 500, 1024, 2048, 4096}
 	allowHDDSizes         = []int{40, 60, 80, 100, 250, 500, 750, 1024, 2048, 4096}
@@ -60,6 +60,8 @@ func (c *sakuraServerConfig) SSHUserName() string {
 		return "ubuntu"
 	case "rancheros":
 		return "rancher"
+	case "coreos":
+		return "core"
 	default:
 		return "root"
 	}
