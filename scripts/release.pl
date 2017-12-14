@@ -434,7 +434,7 @@ sub create_pull_request {
     if(@releases){
         $ret = update_changelog($next_version, @releases);
     } else {
-        infof "skip to update changelogs because no merged pull request is found after the last release.\n"
+        infof "skip to update changelogs because no merged pull request is found after the last release.\n";
     }
 
     if($ret || git_with_exit_code qw/diff --exit-code/){
