@@ -7,6 +7,7 @@ env:
   global:
   - DOCKER_MACHINE_VERSION=0.13.0
   - PATH=/home/travis/gopath/bin:$PATH DEBIAN_FRONTEND=noninteractive
+  - GPG_TTY=$(tty)
   - secure: IMBPw0yS7zTfP7T4OEEClcsSUGLbS+QzU9bTI5pz21BEopis9OA5Emvzwp9KtVNxHsSlTdKsC1wvIcN0cX8EnBfx/rnGqesxsTXaay5fpaPhSDoOcF0jluOc9PePp3wswKNHAELijCgP+rD8aY8/UXfc6OrZK5nwSzR/iSTibKJNTzns2EN4JtK/tQMlBNpryA+vrjNXoS7rOuTuWXvYYxU8dkicFcqKA0KAFrSPzybC2olQifIoe6B/snPp62SE2q3qrat7f8M/ugfeiII7sOX4hlRkIgkbNjIMi0NkmcTXn3GNpp5rvbdjZk5uDDmSsubT5ITTwHe1RnwfqdcY+vGcqU71kMTZ9kCX7kg5Dsbl5Mj6YhIs+M0E1M3YAp2NIkbg8Qa0AI17cYSuhFVgs90VlzVl3y67zg9CBPRQ4KB9sL7Sr0+XPG8VXez50YfgnZ6V9gISOePMs/lVJPYudwrIVNkTWARDQK5aW2a8ZvroKT8cptGXbf27WKQAwHvrdXupqVGdb3hmJNAknNBWn3K7iqihhGG1rbCF1Kbl7Pyd4RUpmCS5ZOB9jnegzTPtlFpyQDHBboqOtuZTx5CH1AhRrq7ZDlxT1jZvIPOV+eIQ2eMW6MvPUDMpfY/iW/Mnc7OD1fvmVmm6q6OXPEe1Y9+DgO5J04KCKCOqsn5Veug=
 install:
 - go get -u github.com/golang/lint/golint
