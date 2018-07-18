@@ -441,8 +441,7 @@ sub create_pull_request {
         git qw/config --global push.default matching/;
         git qw/config user.email/, 'sacloud.users@gmail.com';
         git qw/config user.name/, 'sacloud-bot';
-        git qw/add ./;
-        git qw/commit -m/, "'update changelogs'";
+        git qw/commit -am/, "'update changelogs'";
         git qw/push -u/, "https://$ENV{GITHUB_TOKEN}\@github.com/$REPO_NAME.git";
         infof "Difference is pushed to GitHub.\n";
     }
