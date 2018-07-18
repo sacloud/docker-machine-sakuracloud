@@ -8,14 +8,14 @@ import (
 )
 
 var (
-	defaultRegion          = "is1b"      // 石狩第2ゾーン
-	defaultOSType          = "rancheros" // OSタイプ
-	defaultCore            = 1           // デフォルトコア数
-	defaultMemorySize      = 1           // デフォルトメモリサイズ
-	defaultDiskPlan        = "ssd"       // ディスクプラン(ssd/hdd)
-	defaultDiskSize        = 20          // 20GB
-	defaultDiskConnection  = "virtio"    // ディスク接続ドライバ
-	defaultInterfaceDriver = "virtio"    // NIC接続ドライバ
+	defaultRegion          = "is1b"   // 石狩第2ゾーン
+	defaultOSType          = "coreos" // OSタイプ
+	defaultCore            = 1        // デフォルトコア数
+	defaultMemorySize      = 1        // デフォルトメモリサイズ
+	defaultDiskPlan        = "ssd"    // ディスクプラン(ssd/hdd)
+	defaultDiskSize        = 20       // 20GB
+	defaultDiskConnection  = "virtio" // ディスク接続ドライバ
+	defaultInterfaceDriver = "virtio" // NIC接続ドライバ
 	defaultPacketFilter    = ""
 	defaultEnablePWAuth    = false
 )
