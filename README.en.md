@@ -82,7 +82,7 @@ Environment variables and default values:
 | `--sakuracloud-access-token`         | `SAKURACLOUD_ACCESS_TOKEN`        | -                        |
 | `--sakuracloud-access-token-secret`  | `SAKURACLOUD_ACCESS_TOKEN_SECRET` | -                        |
 | `--sakuracloud-zone`                 | `SAKURACLOUD_ZONE`                | `is1b`                   |
-| `--sakuracloud-os-type`              | `SAKURACLOUD_OS_TYPE`             | `rancheros`              |
+| `--sakuracloud-os-type`              | `SAKURACLOUD_OS_TYPE`             | `coreos`                 |
 | `--sakuracloud-core`                 | `SAKURACLOUD_CORE`                | `1`                      |
 | `--sakuracloud-memory`               | `SAKURACLOUD_MEMORY`              | `1`                      |
 | `--sakuracloud-disk-connection`      | `SAKURACLOUD_DISK_CONNECTION`     | `virtio`                 |
