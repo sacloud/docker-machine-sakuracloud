@@ -102,6 +102,10 @@ var (
 	DatabasePlan90G = DatabasePlan(90)
 	// DatabasePlan240G 240Gプラン
 	DatabasePlan240G = DatabasePlan(240)
+	// DatabasePlan500G 500Gプラン
+	DatabasePlan500G = DatabasePlan(500)
+	// DatabasePlan1T 1Tプラン
+	DatabasePlan1T = DatabasePlan(1000)
 )
 
 // AllowDatabasePlans 指定可能なデータベースプラン
@@ -111,6 +115,8 @@ func AllowDatabasePlans() []int {
 		int(DatabasePlan30G),
 		int(DatabasePlan90G),
 		int(DatabasePlan240G),
+		int(DatabasePlan500G),
+		int(DatabasePlan1T),
 	}
 }
 
@@ -193,22 +199,16 @@ type CreateDatabaseValue struct {
 // NewCreatePostgreSQLDatabaseValue PostgreSQL作成用パラメーター
 func NewCreatePostgreSQLDatabaseValue() *CreateDatabaseValue {
 	return &CreateDatabaseValue{
-		DatabaseName:     "postgres",
-		DatabaseRevision: "9.6.2",
-		DatabaseTitle:    "PostgreSQL 9.6.2",
-		DatabaseVersion:  "9.6",
-		// ReplicaUser:      "replica",
+		DatabaseName:    "postgres",
+		DatabaseVersion: "10",
 	}
 }
 
 // NewCreateMariaDBDatabaseValue MariaDB作成用パラメーター
 func NewCreateMariaDBDatabaseValue() *CreateDatabaseValue {
 	return &CreateDatabaseValue{
-		DatabaseName:     "MariaDB",
-		DatabaseRevision: "10.1.21",
-		DatabaseTitle:    "MariaDB 10.1.21",
-		DatabaseVersion:  "10.1",
-		// ReplicaUser:      "replica",
+		DatabaseName:    "MariaDB",
+		DatabaseVersion: "10.2",
 	}
 }
 
@@ -316,7 +316,7 @@ func CreateNewDatabase(values *CreateDatabaseValue) *Database {
 	}
 
 	db.Remark.Servers = []interface{}{
-		map[string]string{"IPAddress": values.IPAddress1},
+		map[string]interface{}{"IPAddress": values.IPAddress1},
 	}
 
 	if values.WebUI {
@@ -406,7 +406,7 @@ func CloneNewDatabase(values *CreateDatabaseValue) *Database {
 	}
 
 	db.Remark.Servers = []interface{}{
-		map[string]string{"IPAddress": values.IPAddress1},
+		map[string]interface{}{"IPAddress": values.IPAddress1},
 	}
 
 	if values.WebUI {

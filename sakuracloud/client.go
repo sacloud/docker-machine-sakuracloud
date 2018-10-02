@@ -5,6 +5,7 @@ import (
 	"github.com/sacloud/docker-machine-sakuracloud/version"
 	"github.com/sacloud/libsacloud/api"
 	"github.com/sacloud/libsacloud/builder"
+	"github.com/sacloud/libsacloud/sacloud"
 	"github.com/sacloud/libsacloud/sacloud/ostype"
 )
 
@@ -57,7 +58,7 @@ func (c *APIClient) ServerBuilder(osType, name, password string) *builder.Public
 }
 
 func (c *APIClient) IsValidPlan(core int, memory int) (bool, error) {
-	return c.client.Product.Server.IsValidPlan(core, memory)
+	return c.client.Product.Server.IsValidPlan(core, memory, sacloud.PlanDefault)
 }
 
 func (c *APIClient) IsExistsPacketFilter(id int64) (bool, error) {
