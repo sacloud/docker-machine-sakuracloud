@@ -4,29 +4,32 @@ import "fmt"
 
 // Disk ディスク
 type Disk struct {
-	*Resource          // ID
-	propAvailability   // 有功状態
-	propName           // 名称
-	propDescription    // 説明
-	propSizeMB         // サイズ(MB単位)
-	propMigratedMB     // コピー済みデータサイズ(MB単位)
-	propCopySource     // コピー元情報
-	propJobStatus      // マイグレーションジョブステータス
-	propBundleInfo     // バンドル情報
-	propServer         // サーバー
-	propIcon           // アイコン
-	propTags           // タグ
-	propCreatedAt      // 作成日時
-	propPlanID         // プランID
-	propDiskConnection // ディスク接続情報
-	propDistantFrom    // ストレージ隔離対象ディスク
+	*Resource                          // ID
+	propAvailability                   // 有功状態
+	propName                           // 名称
+	propDescription                    // 説明
+	propSizeMB                         // サイズ(MB単位)
+	propMigratedMB                     // コピー済みデータサイズ(MB単位)
+	propCopySource                     // コピー元情報
+	propJobStatus                      // マイグレーションジョブステータス
+	propBundleInfo                     // バンドル情報
+	propServer                         // サーバー
+	propIcon                           // アイコン
+	propTags                           // タグ
+	propCreatedAt                      // 作成日時
+	propPlanID                         // プランID
+	propDiskConnection                 // ディスク接続情報
+	propDistantFrom                    // ストレージ隔離対象ディスク
+	Generation         PlanGenerations `json:",omitempty"` // プラン世代
 
 	ReinstallCount int `json:",omitempty"` // 再インストール回数
 
 	Storage struct { // ストレージ
-		*Resource         // ID
-		MountIndex int64  `json:",omitempty"` // マウント順
-		Class      string `json:",omitempty"` // クラス
+		*Resource              // ID
+		Name       string      `json:",omitempty"`  // 名称
+		DiskPlan   ProductDisk `json:",ommitempty"` // ディスクプラン
+		MountIndex int64       `json:",omitempty"`  // マウント順
+		Class      string      `json:",omitempty"`  // クラス
 	}
 }
 

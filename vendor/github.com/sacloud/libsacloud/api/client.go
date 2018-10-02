@@ -34,10 +34,16 @@ type Client struct {
 	DefaultTimeoutDuration time.Duration
 	// ユーザーエージェント
 	UserAgent string
+	// Accept-Language
+	AcceptLanguage string
 	// リクエストパラメーター トレーサー
 	RequestTracer io.Writer
 	// レスポンス トレーサー
 	ResponseTracer io.Writer
+	// 503エラー時のリトライ回数
+	RetryMax int
+	// 503エラー時のリトライ待ち時間
+	RetryInterval time.Duration
 }
 
 // NewClient APIクライアント作成
@@ -49,6 +55,9 @@ func NewClient(token, tokenSecret, zone string) *Client {
 		TraceMode:              false,
 		DefaultTimeoutDuration: 20 * time.Minute,
 		UserAgent:              fmt.Sprintf("libsacloud/%s", libsacloud.Version),
+		AcceptLanguage:         "",
+		RetryMax:               0,
+		RetryInterval:          5 * time.Second,
 	}
 	c.API = newAPI(c)
 	return c
@@ -63,6 +72,9 @@ func (c *Client) Clone() *Client {
 		TraceMode:              c.TraceMode,
 		DefaultTimeoutDuration: c.DefaultTimeoutDuration,
 		UserAgent:              c.UserAgent,
+		AcceptLanguage:         c.AcceptLanguage,
+		RetryMax:               c.RetryMax,
+		RetryInterval:          c.RetryInterval,
 	}
 	n.API = newAPI(n)
 	return n
@@ -98,9 +110,12 @@ func (c *Client) isOkStatus(code int) bool {
 
 func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error) {
 	var (
-		client = &http.Client{}
-		err    error
-		req    *http.Request
+		client = &retryableHTTPClient{
+			retryMax:      c.RetryMax,
+			retryInterval: c.RetryInterval,
+		}
+		err error
+		req *request
 	)
 	var url = uri
 	if !strings.HasPrefix(url, "https://") {
@@ -115,9 +130,9 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 		}
 		if method == "GET" {
 			url = fmt.Sprintf("%s?%s", url, bytes.NewBuffer(bodyJSON))
-			req, err = http.NewRequest(method, url, nil)
+			req, err = newRequest(method, url, nil)
 		} else {
-			req, err = http.NewRequest(method, url, bytes.NewBuffer(bodyJSON))
+			req, err = newRequest(method, url, bytes.NewReader(bodyJSON))
 		}
 		b, _ := json.MarshalIndent(body, "", "\t")
 		if c.TraceMode {
@@ -127,7 +142,7 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 			c.RequestTracer.Write(b)
 		}
 	} else {
-		req, err = http.NewRequest(method, url, nil)
+		req, err = newRequest(method, url, nil)
 		if c.TraceMode {
 			log.Printf("[libsacloud:Client#request] method : %#v , url : %s ", method, url)
 		}
@@ -143,6 +158,9 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	//	req.Header.Add("X-Sakura-API-Beautify", "1") // format response-JSON
 	//}
 	req.Header.Add("User-Agent", c.UserAgent)
+	if c.AcceptLanguage != "" {
+		req.Header.Add("Accept-Language", c.AcceptLanguage)
+	}
 	req.Method = method
 
 	resp, err := client.Do(req)
@@ -181,6 +199,76 @@ func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error
 	return data, nil
 }
 
+type lenReader interface {
+	Len() int
+}
+
+type request struct {
+	// body is a seekable reader over the request body payload. This is
+	// used to rewind the request data in between retries.
+	body io.ReadSeeker
+
+	// Embed an HTTP request directly. This makes a *Request act exactly
+	// like an *http.Request so that all meta methods are supported.
+	*http.Request
+}
+
+func newRequest(method, url string, body io.ReadSeeker) (*request, error) {
+	var rcBody io.ReadCloser
+	if body != nil {
+		rcBody = ioutil.NopCloser(body)
+	}
+
+	httpReq, err := http.NewRequest(method, url, rcBody)
+	if err != nil {
+		return nil, err
+	}
+
+	if lr, ok := body.(lenReader); ok {
+		httpReq.ContentLength = int64(lr.Len())
+	}
+
+	return &request{body, httpReq}, nil
+}
+
+type retryableHTTPClient struct {
+	http.Client
+	retryInterval time.Duration
+	retryMax      int
+}
+
+func (c *retryableHTTPClient) Do(req *request) (*http.Response, error) {
+	for i := 0; ; i++ {
+
+		if req.body != nil {
+			if _, err := req.body.Seek(0, 0); err != nil {
+				return nil, fmt.Errorf("failed to seek body: %v", err)
+			}
+		}
+
+		res, err := c.Client.Do(req.Request)
+		if res != nil && res.StatusCode != 503 {
+			return res, err
+		}
+		if res != nil && res.Body != nil {
+			res.Body.Close()
+		}
+
+		if err != nil {
+			return res, err
+		}
+
+		remain := c.retryMax - i
+		if remain == 0 {
+			break
+		}
+		time.Sleep(c.retryInterval)
+	}
+
+	return nil, fmt.Errorf("%s %s giving up after %d attempts",
+		req.Method, req.URL, c.retryMax+1)
+}
+
 // API libsacloudでサポートしているAPI群
 type API struct {
 	AuthStatus    *AuthStatusAPI    // 認証状態API
@@ -202,6 +290,7 @@ type API struct {
 	IPv6Net       *IPv6NetAPI       // IPv6ネットワークAPI
 	License       *LicenseAPI       // ライセンスAPI
 	LoadBalancer  *LoadBalancerAPI  // ロードバランサーAPI
+	MobileGateway *MobileGatewayAPI // モバイルゲートウェイAPI
 	NewsFeed      *NewsFeedAPI      // フィード(障害/メンテナンス情報)API
 	NFS           *NFSAPI           // NFS API
 	Note          *NoteAPI          // スタートアップスクリプトAPI
@@ -209,6 +298,7 @@ type API struct {
 	PrivateHost   *PrivateHostAPI   // 専有ホストAPI
 	Product       *ProductAPI       // 製品情報API
 	Server        *ServerAPI        // サーバーAPI
+	SIM           *SIMAPI           // SIM API
 	SimpleMonitor *SimpleMonitorAPI // シンプル監視API
 	SSHKey        *SSHKeyAPI        // 公開鍵API
 	Subnet        *SubnetAPI        // IPv4ネットワークAPI
@@ -317,6 +407,11 @@ func (api *API) GetLoadBalancerAPI() *LoadBalancerAPI {
 	return api.LoadBalancer
 }
 
+// GetMobileGatewayAPI モバイルゲートウェイAPI取得
+func (api *API) GetMobileGatewayAPI() *MobileGatewayAPI {
+	return api.MobileGateway
+}
+
 // GetNewsFeedAPI フィード(障害/メンテナンス情報)API取得
 func (api *API) GetNewsFeedAPI() *NewsFeedAPI {
 	return api.NewsFeed
@@ -370,6 +465,11 @@ func (api *API) GetPublicPriceAPI() *PublicPriceAPI {
 // GetServerAPI サーバーAPI取得
 func (api *API) GetServerAPI() *ServerAPI {
 	return api.Server
+}
+
+// GetSIMAPI SIM API取得
+func (api *API) GetSIMAPI() *SIMAPI {
+	return api.SIM
 }
 
 // GetSimpleMonitorAPI シンプル監視API取得
@@ -473,20 +573,21 @@ func newAPI(client *Client) *API {
 			Region: NewRegionAPI(client),
 			Zone:   NewZoneAPI(client),
 		},
-		GSLB:         NewGSLBAPI(client),
-		Icon:         NewIconAPI(client),
-		Interface:    NewInterfaceAPI(client),
-		Internet:     NewInternetAPI(client),
-		IPAddress:    NewIPAddressAPI(client),
-		IPv6Addr:     NewIPv6AddrAPI(client),
-		IPv6Net:      NewIPv6NetAPI(client),
-		License:      NewLicenseAPI(client),
-		LoadBalancer: NewLoadBalancerAPI(client),
-		NewsFeed:     NewNewsFeedAPI(client),
-		NFS:          NewNFSAPI(client),
-		Note:         NewNoteAPI(client),
-		PacketFilter: NewPacketFilterAPI(client),
-		PrivateHost:  NewPrivateHostAPI(client),
+		GSLB:          NewGSLBAPI(client),
+		Icon:          NewIconAPI(client),
+		Interface:     NewInterfaceAPI(client),
+		Internet:      NewInternetAPI(client),
+		IPAddress:     NewIPAddressAPI(client),
+		IPv6Addr:      NewIPv6AddrAPI(client),
+		IPv6Net:       NewIPv6NetAPI(client),
+		License:       NewLicenseAPI(client),
+		LoadBalancer:  NewLoadBalancerAPI(client),
+		MobileGateway: NewMobileGatewayAPI(client),
+		NewsFeed:      NewNewsFeedAPI(client),
+		NFS:           NewNFSAPI(client),
+		Note:          NewNoteAPI(client),
+		PacketFilter:  NewPacketFilterAPI(client),
+		PrivateHost:   NewPrivateHostAPI(client),
 		Product: &ProductAPI{
 			Server:      NewProductServerAPI(client),
 			License:     NewProductLicenseAPI(client),
@@ -496,6 +597,7 @@ func newAPI(client *Client) *API {
 			Price:       NewPublicPriceAPI(client),
 		},
 		Server:        NewServerAPI(client),
+		SIM:           NewSIMAPI(client),
 		SimpleMonitor: NewSimpleMonitorAPI(client),
 		SSHKey:        NewSSHKeyAPI(client),
 		Subnet:        NewSubnetAPI(client),

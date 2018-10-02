@@ -56,7 +56,15 @@ func (api *DiskAPI) Create(value *sacloud.Disk) (*sacloud.Disk, error) {
 		Success string `json:",omitempty"`
 	}
 	res := &diskResponse{}
-	err := api.create(api.createRequest(value), res)
+
+	rawBody := &sacloud.Request{}
+	rawBody.Disk = value
+	if len(value.DistantFrom) > 0 {
+		rawBody.DistantFrom = value.DistantFrom
+		value.DistantFrom = []int64{}
+	}
+
+	err := api.create(rawBody, res)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +98,14 @@ func (api *DiskAPI) install(id int64, body *sacloud.Disk) (bool, error) {
 		Success string `json:",omitempty"`
 	}
 	res := &diskResponse{}
-	err := api.baseAPI.request(method, uri, body, res)
+	rawBody := &sacloud.Request{}
+	rawBody.Disk = body
+	if len(body.DistantFrom) > 0 {
+		rawBody.DistantFrom = body.DistantFrom
+		body.DistantFrom = []int64{}
+	}
+
+	err := api.baseAPI.request(method, uri, rawBody, res)
 	if err != nil {
 		return false, err
 	}
@@ -171,61 +186,19 @@ func (api *DiskAPI) State(diskID int64) (bool, error) {
 }
 
 // SleepWhileCopying コピー終了まで待機
-func (api *DiskAPI) SleepWhileCopying(diskID int64, timeout time.Duration) error {
-	current := 0 * time.Second
-	interval := 5 * time.Second
-	for {
-		available, err := api.State(diskID)
-		if err != nil {
-			return err
-		}
-
-		if available {
-			return nil
-		}
-		time.Sleep(interval)
-		current += interval
-
-		if timeout > 0 && current > timeout {
-			return fmt.Errorf("Timeout: WaitforAvailable")
-		}
-	}
+func (api *DiskAPI) SleepWhileCopying(id int64, timeout time.Duration) error {
+	handler := waitingForAvailableFunc(func() (hasAvailable, error) {
+		return api.Read(id)
+	}, 0)
+	return blockingPoll(handler, timeout)
 }
 
 // AsyncSleepWhileCopying コピー終了まで待機(非同期)
-func (api *DiskAPI) AsyncSleepWhileCopying(id int64, timeout time.Duration) (chan (*sacloud.Disk), chan (*sacloud.Disk), chan (error)) {
-	complete := make(chan *sacloud.Disk)
-	progress := make(chan *sacloud.Disk)
-	err := make(chan error)
-
-	go func() {
-		for {
-			select {
-			case <-time.After(5 * time.Second):
-				disk, e := api.Read(id)
-				if e != nil {
-					err <- e
-					return
-				}
-
-				progress <- disk
-
-				if disk.IsAvailable() {
-					complete <- disk
-					return
-				}
-				if disk.IsFailed() {
-					err <- fmt.Errorf("Failed: Create disk is failed: %#v", disk)
-					return
-				}
-
-			case <-time.After(timeout):
-				err <- fmt.Errorf("Timeout: AsyncSleepWhileCopying[ID:%d]", id)
-				return
-			}
-		}
-	}()
-	return complete, progress, err
+func (api *DiskAPI) AsyncSleepWhileCopying(id int64, timeout time.Duration) (chan (interface{}), chan (interface{}), chan (error)) {
+	handler := waitingForAvailableFunc(func() (hasAvailable, error) {
+		return api.Read(id)
+	}, 0)
+	return poll(handler, timeout)
 }
 
 // Monitor アクティビティーモニター取得
@@ -248,6 +221,19 @@ func (api *DiskAPI) CanEditDisk(id int64) (bool, error) {
 	// BundleInfoがあれば編集不可
 	if disk.BundleInfo != nil && disk.BundleInfo.HostClass == bundleInfoWindowsHostClass {
 		// Windows
+		return false, nil
+	}
+
+	// SophosUTMであれば編集不可
+	if disk.HasTag("pkg-sophosutm") || disk.IsSophosUTM() {
+		return false, nil
+	}
+	// OPNsenseであれば編集不可
+	if disk.HasTag("distro-opnsense") {
+		return false, nil
+	}
+	// Netwiser VEであれば編集不可
+	if disk.HasTag("pkg-netwiserve") {
 		return false, nil
 	}
 
@@ -293,6 +279,19 @@ func (api *DiskAPI) GetPublicArchiveIDFromAncestors(id int64) (int64, bool) {
 	// BundleInfoがあれば編集不可
 	if disk.BundleInfo != nil && disk.BundleInfo.HostClass == bundleInfoWindowsHostClass {
 		// Windows
+		return emptyID, false
+	}
+
+	// SophosUTMであれば編集不可
+	if disk.HasTag("pkg-sophosutm") || disk.IsSophosUTM() {
+		return emptyID, false
+	}
+	// OPNsenseであれば編集不可
+	if disk.HasTag("distro-opnsense") {
+		return emptyID, false
+	}
+	// Netwiser VEであれば編集不可
+	if disk.HasTag("pkg-netwiserve") {
 		return emptyID, false
 	}
 
