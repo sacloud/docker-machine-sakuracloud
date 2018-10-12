@@ -53,7 +53,7 @@ func (c *APIClient) ValidateClientConfig() error {
 	return nil
 }
 
-func (c *APIClient) ServerBuilder(osType, name, password string) *builder.PublicArchiveUnixServerBuilder {
+func (c *APIClient) ServerBuilder(osType, name, password string) builder.PublicArchiveUnixServerBuilder {
 	return builder.ServerPublicArchiveUnix(c.client, ostype.StrToOSType(osType), name, password)
 }
 
