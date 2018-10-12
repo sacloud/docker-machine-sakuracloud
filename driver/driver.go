@@ -306,7 +306,7 @@ firewall-cmd --zone=public --add-port=%d/tcp --permanent || exit 1
 sh -c 'sleep 10; shutdown -h now' &
 exit 0`
 
-func (d *Driver) buildSakuraServerSpec(publicKey string) *builder.PublicArchiveUnixServerBuilder {
+func (d *Driver) buildSakuraServerSpec(publicKey string) builder.PublicArchiveUnixServerBuilder {
 
 	name := d.serverConfig.HostName
 	b := d.getClient().ServerBuilder(
@@ -361,9 +361,6 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *builder.PublicArchiveU
 	})
 	b.SetDiskEventHandler(builder.DiskBuildOnCreateDiskBefore, func(_ *builder.DiskBuildValue, _ *builder.DiskBuildResult) {
 		log.Infof("Creating disk...")
-	})
-	b.SetDiskEventHandler(builder.DiskBuildOnEditDiskBefore, func(_ *builder.DiskBuildValue, _ *builder.DiskBuildResult) {
-		log.Infof("Editing disk...")
 	})
 
 	log.Debugf("Build host spec %#v", b)
