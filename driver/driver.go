@@ -159,7 +159,6 @@ func (d *Driver) GetIP() (string, error) {
 	}
 
 	return d.getClient().GetIP(d.ID)
-
 }
 
 // GetState get server power state
@@ -213,6 +212,7 @@ func (d *Driver) Create() error {
 	}
 	d.ID = serverResponse.Server.GetStrID()
 	d.DiskID = serverResponse.Disks[0].Disk.GetStrID()
+	d.IPAddress = serverResponse.Server.IPAddress()
 
 	if d.serverConfig.IsNeedWaitingRestart() {
 		// wait for shutdown
