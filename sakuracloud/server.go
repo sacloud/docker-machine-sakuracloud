@@ -5,10 +5,10 @@ import (
 )
 
 // State get server state
-func (c *APIClient) State(strId string) (string, error) {
-	id, res := ToSakuraID(strId)
+func (c *APIClient) State(strID string) (string, error) {
+	id, res := ToSakuraID(strID)
 	if !res {
-		return "", fmt.Errorf("ServerID is invalid: %s", strId)
+		return "", fmt.Errorf("ServerID is invalid: %s", strID)
 	}
 
 	server, err := c.client.Server.Read(id)
@@ -19,10 +19,10 @@ func (c *APIClient) State(strId string) (string, error) {
 }
 
 // PowerOn power on
-func (c *APIClient) PowerOn(strId string) error {
-	id, res := ToSakuraID(strId)
+func (c *APIClient) PowerOn(strID string) error {
+	id, res := ToSakuraID(strID)
 	if !res {
-		return fmt.Errorf("ServerID is invalid: %s", strId)
+		return fmt.Errorf("ServerID is invalid: %s", strID)
 	}
 
 	_, err := c.client.Server.Boot(id)
@@ -30,20 +30,20 @@ func (c *APIClient) PowerOn(strId string) error {
 }
 
 // PowerOff power off
-func (c *APIClient) PowerOff(strId string) error {
-	id, res := ToSakuraID(strId)
+func (c *APIClient) PowerOff(strID string) error {
+	id, res := ToSakuraID(strID)
 	if !res {
-		return fmt.Errorf("ServerID is invalid: %s", strId)
+		return fmt.Errorf("ServerID is invalid: %s", strID)
 	}
 	_, err := c.client.Server.Shutdown(id)
 	return err
 }
 
 // GetIP get public ip address
-func (c *APIClient) GetIP(strId string) (string, error) {
-	id, res := ToSakuraID(strId)
+func (c *APIClient) GetIP(strID string) (string, error) {
+	id, res := ToSakuraID(strID)
 	if !res {
-		return "", fmt.Errorf("ServerID is invalid: %s", strId)
+		return "", fmt.Errorf("ServerID is invalid: %s", strID)
 	}
 	server, err := c.client.Server.Read(id)
 	if err != nil {
@@ -53,10 +53,10 @@ func (c *APIClient) GetIP(strId string) (string, error) {
 }
 
 // Delete delete server
-func (c *APIClient) Delete(strId string, strDisks []string) error {
-	id, res := ToSakuraID(strId)
+func (c *APIClient) Delete(strID string, strDisks []string) error {
+	id, res := ToSakuraID(strID)
 	if !res {
-		return fmt.Errorf("ServerID is invalid: %s", strId)
+		return fmt.Errorf("ServerID is invalid: %s", strID)
 	}
 
 	disks, res := ToSakuraIDAll(strDisks)

@@ -232,26 +232,25 @@ func (d *Driver) prepareSSHKey() (string, error) {
 			return "", err
 		}
 		return pKey, nil
-	} else {
-		log.Info("Importing SSH key...")
-		if err := mcnutils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
-			return "", fmt.Errorf("unable to copy ssh key: %s", err)
-		}
-		if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
-			return "", fmt.Errorf("unable to set permissions on the ssh key: %s", err)
-		}
-		if err := mcnutils.CopyFile(d.SSHKey+".pub", d.GetSSHKeyPath()+".pub"); err != nil {
-			return "", fmt.Errorf("unable to copy ssh key: %s", err)
-		}
-
-		pKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
-		if err != nil {
-			return "", err
-		}
-
-		return string(pKey), nil
 	}
 
+	log.Info("Importing SSH key...")
+	if err := mcnutils.CopyFile(d.SSHKey, d.GetSSHKeyPath()); err != nil {
+		return "", fmt.Errorf("unable to copy ssh key: %s", err)
+	}
+	if err := os.Chmod(d.GetSSHKeyPath(), 0600); err != nil {
+		return "", fmt.Errorf("unable to set permissions on the ssh key: %s", err)
+	}
+	if err := mcnutils.CopyFile(d.SSHKey+".pub", d.GetSSHKeyPath()+".pub"); err != nil {
+		return "", fmt.Errorf("unable to copy ssh key: %s", err)
+	}
+
+	pKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	if err != nil {
+		return "", err
+	}
+
+	return string(pKey), nil
 }
 
 func (d *Driver) preparePassword() {

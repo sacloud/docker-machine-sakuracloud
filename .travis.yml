@@ -2,7 +2,7 @@ sudo: required
 services: docker
 language: go
 go:
-- "1.10"
+- "1.12"
 env:
   global:
   - DOCKER_MACHINE_VERSION=0.13.0

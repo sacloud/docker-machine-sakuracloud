@@ -65,8 +65,8 @@ func getTestStorePath() (string, error) {
 func getDefaultTestDriverFlags() *DriverOptionsMock {
 	return &DriverOptionsMock{
 		Data: map[string]interface{}{
-			"name": "test",
-			"url":  "unix:///var/run/docker.sock",
+			"name":                            "test",
+			"url":                             "unix:///var/run/docker.sock",
 			"sakuracloud-access-token":        "accesstoken",
 			"sakuracloud-access-token-secret": "secret",
 			"sakuracloud-region":              "is1a",

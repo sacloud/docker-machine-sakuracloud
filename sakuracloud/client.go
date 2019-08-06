@@ -9,6 +9,7 @@ import (
 	"github.com/sacloud/libsacloud/sacloud/ostype"
 )
 
+// APIClient client for SakuraCloud API
 type APIClient struct {
 	AccessToken       string
 	AccessTokenSecret string
@@ -18,6 +19,7 @@ type APIClient struct {
 	initialized       bool
 }
 
+// NewAPIClient returns new APIClient
 func NewAPIClient(token string, secret string, zone string) *APIClient {
 	return &APIClient{
 		AccessToken:       token,
@@ -28,6 +30,7 @@ func NewAPIClient(token string, secret string, zone string) *APIClient {
 	}
 }
 
+// Init initialize APIClient
 func (c *APIClient) Init() {
 	if !c.initialized {
 		if c.Zone == "" && c.Region != "" {
@@ -39,6 +42,7 @@ func (c *APIClient) Init() {
 	}
 }
 
+// ValidateClientConfig validates client config
 func (c *APIClient) ValidateClientConfig() error {
 	if c.client.AccessToken == "" {
 		return fmt.Errorf("Missing required setting - --sakuracloud-access-token")
@@ -53,14 +57,17 @@ func (c *APIClient) ValidateClientConfig() error {
 	return nil
 }
 
+// ServerBuilder returns new server builder
 func (c *APIClient) ServerBuilder(osType, name, password string) builder.PublicArchiveUnixServerBuilder {
 	return builder.ServerPublicArchiveUnix(c.client, ostype.StrToOSType(osType), name, password)
 }
 
+// IsValidPlan validates plan
 func (c *APIClient) IsValidPlan(core int, memory int) (bool, error) {
 	return c.client.Product.Server.IsValidPlan(core, memory, sacloud.PlanDefault)
 }
 
+// IsExistsPacketFilter returns true is PakcetFilter is exists
 func (c *APIClient) IsExistsPacketFilter(id int64) (bool, error) {
 	pf, err := c.client.PacketFilter.Read(id)
 	if err != nil {
