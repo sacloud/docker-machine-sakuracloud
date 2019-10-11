@@ -2,9 +2,10 @@ package driver
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/docker/machine/libmachine/engine"
 	"github.com/docker/machine/libmachine/mcnflag"
-	"strings"
 )
 
 var (
@@ -81,12 +82,12 @@ func (c *sakuraServerConfig) IsNeedWaitingRestart() bool {
 func (c *sakuraServerConfig) Validate() error {
 	// os-type
 	if !c.isStrInValue(c.OSType, allowOSTypes...) {
-		return fmt.Errorf("%q must be either [%s]", "--sakuracloud-os-type", strings.Join(allowOSTypes, "/"))
+		return fmt.Errorf("%q must be set to one of [%s]", "--sakuracloud-os-type", strings.Join(allowOSTypes, "/"))
 	}
 
 	// disk-plan
 	if !c.isStrInValue(c.DiskPlan, allowDiskPlans...) {
-		return fmt.Errorf("%q must be either [%s]", "--sakuracloud-disk-plan", strings.Join(allowDiskPlans, "/"))
+		return fmt.Errorf("%q must be set to one of [%s]", "--sakuracloud-disk-plan", strings.Join(allowDiskPlans, "/"))
 	}
 
 	// disk-size(per disk-plan)
@@ -98,17 +99,17 @@ func (c *sakuraServerConfig) Validate() error {
 		allowDiskSizes = allowHDDSizes
 	}
 	if !c.isIntInValue(c.DiskSize, allowDiskSizes...) {
-		return fmt.Errorf("%q must be either [20(SSD)/40/60(HDD)/80(HDD)/100/250/500/750(HDD)/1024/2048/4096]", "--sakuracloud-disk-size")
+		return fmt.Errorf("%q must be set to one of [20(SSD)/40/60(HDD)/80(HDD)/100/250/500/750(HDD)/1024/2048/4096]", "--sakuracloud-disk-size")
 	}
 
 	// disk-connection
 	if !c.isStrInValue(c.DiskConnection, allowDiskConnections...) {
-		return fmt.Errorf("%q must be either [%s]", "--sakuracloud-disk-connection", strings.Join(allowDiskConnections, "/"))
+		return fmt.Errorf("%q must be set to one of [%s]", "--sakuracloud-disk-connection", strings.Join(allowDiskConnections, "/"))
 	}
 
 	// interface-driver
 	if !c.isStrInValue(c.InterfaceDriver, allowInterfaceDrivers...) {
-		return fmt.Errorf("%q must be either [%s]", "--sakuracloud-interface-driver", strings.Join(allowInterfaceDrivers, "/"))
+		return fmt.Errorf("%q must be set to one of [%s]", "--sakuracloud-interface-driver", strings.Join(allowInterfaceDrivers, "/"))
 	}
 
 	return nil

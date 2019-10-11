@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
@@ -17,8 +18,9 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/sacloud/docker-machine-sakuracloud/sakuracloud"
-	"github.com/sacloud/libsacloud/builder"
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/libsacloud/v2/utils/server"
+	"github.com/sacloud/libsacloud/v2/utils/server/ostype"
 )
 
 // Driver sakuracloud driver
@@ -54,25 +56,25 @@ func validateSakuraServerConfig(c *sakuracloud.APIClient, config *sakuraServerCo
 
 	err := config.Validate()
 	if err != nil {
-		return fmt.Errorf("Invalid Parameter: %s", err)
+		return fmt.Errorf("invalid parameter: %s", err)
 	}
 
 	res, err := c.IsValidPlan(config.Core, config.Memory)
 	if !res || err != nil {
-		return fmt.Errorf("Invalid Parameter: core or memory is invalid : %v", err)
+		return fmt.Errorf("invalid parameter: core or memory is invalid : %v", err)
 	}
 
 	if config.PacketFilter != "" {
-		id, valid := sakuracloud.ToSakuraID(config.PacketFilter)
-		if !valid {
-			return fmt.Errorf("Invalid Parameter: invalid packet-filter-id")
+		id := types.StringID(config.PacketFilter)
+		if id.IsEmpty() {
+			return fmt.Errorf("invalid parameter: invalid packet-filter-id")
 		}
 		exists, err := c.IsExistsPacketFilter(id)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			return fmt.Errorf("Invalid Parameter: packet-filter[id:%d] is not exists", id)
+			return fmt.Errorf("invalid parameter: packet-filter[id:%d] is not exists", id)
 		}
 	}
 
@@ -205,14 +207,22 @@ func (d *Driver) Create() error {
 	d.preparePassword()
 
 	// build server
+	ctx := context.Background()
 	sb := d.buildSakuraServerSpec(publicKey)
-	serverResponse, err := sb.Build()
+	buildResult, err := sb.Build(ctx, d.Client.ServerBuilderClient(), d.Client.Zone)
 	if err != nil {
-		return fmt.Errorf("Error creating host: %v", err)
+		return fmt.Errorf("error creating host: %v", err)
 	}
-	d.ID = serverResponse.Server.GetStrID()
-	d.DiskID = serverResponse.Disks[0].Disk.GetStrID()
-	d.IPAddress = serverResponse.Server.IPAddress()
+
+	// read server status
+	sv, err := d.Client.ReadServer(ctx, buildResult.ServerID)
+	if err != nil {
+		return fmt.Errorf("error creating host: %v", err)
+	}
+
+	d.ID = sv.ID.String()
+	d.DiskID = sv.Disks[0].ID.String()
+	d.IPAddress = sv.Interfaces[0].IPAddress
 
 	if d.serverConfig.IsNeedWaitingRestart() {
 		// wait for shutdown
@@ -305,65 +315,100 @@ firewall-cmd --zone=public --add-port=%d/tcp --permanent || exit 1
 sh -c 'sleep 10; shutdown -h now' &
 exit 0`
 
-func (d *Driver) buildSakuraServerSpec(publicKey string) builder.PublicArchiveUnixServerBuilder {
+func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 
-	name := d.serverConfig.HostName
-	b := d.getClient().ServerBuilder(
-		d.serverConfig.OSType,
-		name,
-		d.serverConfig.Password,
-	)
-
-	// set server spec
-	b.SetServerName(name)
-	b.SetHostName(name)
-	b.SetCore(d.serverConfig.Core)
-	b.SetMemory(d.serverConfig.Memory)
-	b.AddPublicNWConnectedNIC()
-
+	var interfaceDriver types.EInterfaceDriver
 	switch d.serverConfig.InterfaceDriver {
 	case "virtio":
-		b.SetInterfaceDriver(sacloud.InterfaceDriverVirtIO)
+		interfaceDriver = types.InterfaceDrivers.VirtIO
 	case "e1000":
-		b.SetInterfaceDriver(sacloud.InterfaceDriverE1000)
+		interfaceDriver = types.InterfaceDrivers.E1000
 	}
 
-	// set disk spec
-	b.SetDiskSize(d.serverConfig.DiskSize)
-	b.SetDiskPlan(d.serverConfig.DiskPlan)
+	var ost ostype.UnixPublicArchiveType
+	switch d.serverConfig.OSType {
+	case "rancheros":
+		ost = ostype.RancherOS
+	case "centos":
+		ost = ostype.CentOS
+	case "ubuntu":
+		ost = ostype.Ubuntu
+	case "coreos":
+		ost = ostype.CoreOS
+	}
+
+	var diskPlan types.ID
+	switch d.serverConfig.DiskPlan {
+	case "ssd":
+		diskPlan = types.DiskPlans.SSD
+	case "hdd":
+		diskPlan = types.DiskPlans.HDD
+	}
+
+	var diskConn types.EDiskConnection
 	switch d.serverConfig.DiskConnection {
 	case "virtio":
-		b.SetDiskConnection(sacloud.DiskConnectionVirtio)
+		diskConn = types.DiskConnections.VirtIO
 	case "ide":
-		b.SetDiskConnection(sacloud.DiskConnectionIDE)
+		diskConn = types.DiskConnections.IDE
 	}
 
-	// edit disk params
-	b.AddSSHKey(publicKey)
-	b.SetDisablePWAuth(!d.serverConfig.EnablePWAuth)
+	var notes []string
 	if d.serverConfig.IsUbuntu() {
 		// add startup-script for allow sudo by ubuntu user
-		b.AddNote(sakuraAllowSudoScriptBody)
+		notes = append(notes, sakuraAllowSudoScriptBody)
 	} else if d.serverConfig.IsCentOS() {
-		b.AddNote(fmt.Sprintf(sakuraInstallNetToolsScriptBody, d.EnginePort))
+		notes = append(notes, fmt.Sprintf(sakuraInstallNetToolsScriptBody, d.EnginePort))
 	}
 
-	b.SetNotesEphemeral(true)
-	b.SetSSHKeysEphemeral(true)
+	diskBuilder := &server.FromUnixDiskBuilder{
+		OSType: ost,
+		Name:   d.serverConfig.HostName,
+		SizeGB: d.serverConfig.DiskSize,
+		//DistantFrom:   nil,
+		PlanID:     diskPlan,
+		Connection: diskConn,
+		// Description:   "",
+		// Tags:          nil,
+		// IconID:        0,
+		EditParameter: &server.UnixDiskEditRequest{
+			HostName:            d.serverConfig.HostName,
+			Password:            d.serverConfig.Password,
+			DisablePWAuth:       !d.serverConfig.EnablePWAuth,
+			EnableDHCP:          false,
+			ChangePartitionUUID: true,
+			// IPAddress:                 "",
+			// NetworkMaskLen:            0,
+			// DefaultRoute:              "",
+			SSHKeys:            []string{publicKey},
+			IsSSHKeysEphemeral: false,
+			IsNotesEphemeral:   true,
+			Notes:              notes,
+		},
+	}
 
-	// event handlers(for logging)
-	b.SetEventHandler(builder.ServerBuildOnCreateServerBefore, func(_ *builder.ServerBuildValue, _ *builder.ServerBuildResult) {
-		log.Infof("Creating server...")
-	})
-	b.SetEventHandler(builder.ServerBuildOnBootBefore, func(_ *builder.ServerBuildValue, _ *builder.ServerBuildResult) {
-		log.Infof("Booting server...")
-	})
-	b.SetDiskEventHandler(builder.DiskBuildOnCreateDiskBefore, func(_ *builder.DiskBuildValue, _ *builder.DiskBuildResult) {
-		log.Infof("Creating disk...")
-	})
+	builder := &server.Builder{
+		Name:            d.serverConfig.HostName,
+		CPU:             d.serverConfig.Core,
+		MemoryGB:        d.serverConfig.Memory,
+		Commitment:      types.Commitments.Standard, // TODO パラメータ化
+		Generation:      types.PlanGenerations.Default,
+		InterfaceDriver: interfaceDriver,
+		//Description:     "",
+		//IconID:          0,
+		//Tags:            nil,
+		BootAfterCreate: true,
+		//CDROMID:         0,
+		//PrivateHostID:   0,
+		NIC: &server.SharedNICSetting{
+			PacketFilterID: types.StringID(d.serverConfig.PacketFilter),
+		},
+		//AdditionalNICs: nil,
+		DiskBuilders: []server.DiskBuilder{diskBuilder},
+	}
 
-	log.Debugf("Build host spec %#v", b)
-	return b
+	log.Debugf("Build host spec %#v", builder)
+	return builder
 }
 
 func (d *Driver) createSSHKey() (string, error) {
