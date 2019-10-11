@@ -15,10 +15,8 @@ if [ "$CURRENT_VERSION" = "$VERSION" ] ; then
 fi
 
 cat << EOL > Dockerfile
-FROM alpine:3.6
+FROM alpine:3.10
 MAINTAINER Kazumichi Yamamoto <yamamoto.febc@gmail.com>
-
-LABEL io.whalebrew.config.environment '["SAKURACLOUD_ACCESS_TOKEN", "SAKURACLOUD_ACCESS_TOKEN_SECRET" , "SAKURACLOUD_ZONE" , "SAKURACLOUD_TIMEOUT" , "SAKURACLOUD_TRACE_MODE"]'
 
 RUN set -x && apk add --no-cache curl ca-certificates zip && \
     curl -L https://github.com/docker/machine/releases/download/v${DOCKER_MACHINE_VERSION}/docker-machine-Linux-x86_64 >/usr/local/bin/docker-machine && \
