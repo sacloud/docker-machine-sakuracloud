@@ -8,6 +8,8 @@ BUILD_LDFLAGS = "-s -w \
 	  -X `go list ./version`.GitCommit=`git rev-parse --short HEAD 2>/dev/null` \
 	  -X `go list ./version`.Version=$(CURRENT_VERSION) "
 
+export GO111MODULE=on
+
 default: test vet
 
 clean:
@@ -49,19 +51,16 @@ test: vet
 	TF_ACC= go test $(TEST) $(TESTARGS) -timeout=30s -parallel=4 ; \
 
 vet: golint
-	@echo "go tool vet $(VETARGS) ."
-	@go tool vet $(VETARGS) $$(ls -d */ | grep -v vendor) ; if [ $$? -eq 1 ]; then \
-		echo ""; \
-		echo "Vet found suspicious constructs. Please check the reported constructs"; \
-		echo "and fix them if necessary before submitting the code for review."; \
-		exit 1; \
-	fi
+	go vet ./...
 
-golint: fmt
-	test -z "$(GOLINT_TARGETS)"
+golint:
+	test -z "$$(golint ./... | grep -v 'tools/' | grep -v 'vendor/' | grep -v '_string.go' | tee /dev/stderr )"
+
+goimports: fmt
+	goimports -l -w $(GOFMT_FILES)
 
 fmt:
-	gofmt -w $(GOFMT_FILES)
+	gofmt -s -l -w $(GOFMT_FILES)
 
 docker-test:
 	sh -c "'$(CURDIR)/scripts/build_on_docker.sh' 'test'"
