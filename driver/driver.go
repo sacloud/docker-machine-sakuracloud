@@ -88,6 +88,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		flags.String("sakuracloud-access-token"),
 		flags.String("sakuracloud-access-token-secret"),
 		flags.String("sakuracloud-zone"),
+		flags.String("sakuracloud-password"),
 	)
 	if err := d.getClient().ValidateClientConfig(); err != nil {
 		return err
@@ -265,8 +266,9 @@ func (d *Driver) prepareSSHKey() (string, error) {
 
 func (d *Driver) preparePassword() {
 	if d.serverConfig.Password == "" {
-		d.serverConfig.Password = generateRandomPassword()
-		log.Infof("password is not set, generated.[password:%s]", d.serverConfig.Password)
+		d.Client.Password = generateRandomPassword()
+		log.Infof("password is not set, generated.[password:%s]", d.Client.Password)
+		d.serverConfig.Password = d.Client.Password
 	}
 }
 
