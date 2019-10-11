@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.1 (2019-10-11)
+
+* libsacloud v2 #71 (yamamoto-febc)
+* go 1.13 #72 (yamamoto-febc)
+* Update Dockerfile - use alpine 3.10 #73 (yamamoto-febc)
+* APIClientへのパスワードフィールドの追加 #74 (yamamoto-febc)
+
+
 ## 1.4.0 (2018-11-09)
 
 * IPアドレスをストレージに保存 #69
