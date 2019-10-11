@@ -18,6 +18,7 @@ type APIClient struct {
 	AccessTokenSecret string
 	Zone              string
 	Region            string // 後方互換
+	Password          string // config storeへ残しておくため
 
 	/*
 		Note: 以下エクスポートしていない項目は適切にconfig storeからのUnmarshalに対応すること
@@ -29,13 +30,14 @@ type APIClient struct {
 }
 
 // NewAPIClient returns new APIClient
-func NewAPIClient(token string, secret string, zone string) *APIClient {
+func NewAPIClient(token, secret, zone, password string) *APIClient {
 	caller := initCaller(token, secret)
 
 	return &APIClient{
 		AccessToken:       token,
 		AccessTokenSecret: secret,
 		Zone:              zone,
+		Password:          password,
 		caller:            caller,
 	}
 }
