@@ -1,7 +1,6 @@
 package driver
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -54,7 +53,7 @@ func cleanup() error {
 }
 
 func getTestStorePath() (string, error) {
-	tmpDir, err := ioutil.TempDir("", "machine-test-")
+	tmpDir, err := os.MkdirTemp("", "machine-test-")
 	if err != nil {
 		return "", err
 	}

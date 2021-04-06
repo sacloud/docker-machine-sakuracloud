@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"strconv"
@@ -256,7 +255,7 @@ func (d *Driver) prepareSSHKey() (string, error) {
 		return "", fmt.Errorf("unable to copy ssh key: %s", err)
 	}
 
-	pKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	pKey, err := os.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
 		return "", err
 	}
@@ -418,7 +417,7 @@ func (d *Driver) createSSHKey() (string, error) {
 		return "", err
 	}
 
-	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	publicKey, err := os.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
 		return "", err
 	}
