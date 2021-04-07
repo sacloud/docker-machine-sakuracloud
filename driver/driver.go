@@ -17,8 +17,8 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/sacloud/docker-machine-sakuracloud/sakuracloud"
-	"github.com/sacloud/libsacloud/v2/helper/builder/server"
 	diskBuilder "github.com/sacloud/libsacloud/v2/helper/builder/disk"
+	"github.com/sacloud/libsacloud/v2/helper/builder/server"
 	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
@@ -373,7 +373,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 		// Description:   "",
 		// Tags:          nil,
 		// IconID:        0,
-		EditParameter: &diskBuilder.UnixEditRequest {
+		EditParameter: &diskBuilder.UnixEditRequest{
 			HostName:            d.serverConfig.HostName,
 			Password:            d.serverConfig.Password,
 			DisablePWAuth:       !d.serverConfig.EnablePWAuth,
@@ -385,7 +385,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 			SSHKeys:            []string{publicKey},
 			IsSSHKeysEphemeral: false,
 			IsNotesEphemeral:   true,
-			NoteContents: notes,
+			NoteContents:       notes,
 		},
 	}
 
@@ -407,7 +407,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 		},
 		//AdditionalNICs: nil,
 		DiskBuilders: []diskBuilder.Builder{db},
-		Client: d.Client.ServerBuilderClient(),
+		Client:       d.Client.ServerBuilderClient(),
 	}
 
 	log.Debugf("Build host spec %#v", builder)

@@ -3,9 +3,10 @@ package sakuracloud
 import (
 	"context"
 	"fmt"
-	"github.com/sacloud/libsacloud/v2/helper/query"
 	"net/http"
 	"sync"
+
+	"github.com/sacloud/libsacloud/v2/helper/query"
 
 	"github.com/sacloud/docker-machine-sakuracloud/version"
 	"github.com/sacloud/libsacloud/v2/helper/builder/server"
@@ -45,12 +46,12 @@ func NewAPIClient(token, secret, zone, password string) *APIClient {
 
 func initCaller(token, secret string) sacloud.APICaller {
 	return &sacloud.Client{
-		AccessToken:            token,
-		AccessTokenSecret:      secret,
-		UserAgent:              fmt.Sprintf("docker-machine-sakuracloud/%s", version.Version),
-		AcceptLanguage:         sacloud.APIDefaultAcceptLanguage,
-		RetryMax:               sacloud.APIDefaultRetryMax,
-		HTTPClient:             http.DefaultClient,
+		AccessToken:       token,
+		AccessTokenSecret: secret,
+		UserAgent:         fmt.Sprintf("docker-machine-sakuracloud/%s", version.Version),
+		AcceptLanguage:    sacloud.APIDefaultAcceptLanguage,
+		RetryMax:          sacloud.APIDefaultRetryMax,
+		HTTPClient:        http.DefaultClient,
 	}
 }
 

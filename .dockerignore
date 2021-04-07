@@ -1,3 +1,2 @@
-docker-machine*
-*.log
-bin
+.env
+bin/
