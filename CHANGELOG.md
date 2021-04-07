@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.5.0 (Unreleased)
+## 1.5.0 (2021-04-07)
 
 - Update development environments #78 (yamamoto-febc)
 - Update dependencies #77 (yamamoto-febc)
