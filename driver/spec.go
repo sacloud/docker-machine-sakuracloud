@@ -148,7 +148,7 @@ var mcnFlags = []mcnflag.Flag{
 	mcnflag.StringFlag{
 		EnvVar: "SAKURACLOUD_ZONE",
 		Name:   "sakuracloud-zone",
-		Usage:  "sakuracloud zone name[is1b/tk1a/is1a]",
+		Usage:  "sakuracloud zone name[is1a/is1b/tk1a/tk1b]",
 		Value:  defaultRegion,
 	},
 	mcnflag.StringFlag{

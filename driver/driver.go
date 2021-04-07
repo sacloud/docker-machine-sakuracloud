@@ -388,6 +388,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 			IsNotesEphemeral:   true,
 			NoteContents:       notes,
 		},
+		Client: d.Client.DiskBuilderClient(),
 	}
 
 	builder := &server.Builder{
