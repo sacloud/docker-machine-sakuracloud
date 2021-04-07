@@ -22,7 +22,6 @@ Author:{{if .Author}}
 `
 
 func main() {
-
 	cli.AppHelpTemplate = appHelpTemplate
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
@@ -33,5 +32,5 @@ func main() {
 	app.Action = func(c *cli.Context) {
 		plugin.RegisterDriver(driver.NewDriver("", ""))
 	}
-	app.Run(os.Args)
+	app.Run(os.Args) // nolint
 }
