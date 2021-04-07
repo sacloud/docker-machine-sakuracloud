@@ -3,13 +3,14 @@ package sakuracloud
 import (
 	"context"
 	"fmt"
+	"github.com/sacloud/libsacloud/v2/helper/query"
 	"net/http"
 	"sync"
 
 	"github.com/sacloud/docker-machine-sakuracloud/version"
+	"github.com/sacloud/libsacloud/v2/helper/builder/server"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/libsacloud/v2/utils/server"
 )
 
 // APIClient client for SakuraCloud API
@@ -48,15 +49,13 @@ func initCaller(token, secret string) sacloud.APICaller {
 		AccessTokenSecret:      secret,
 		UserAgent:              fmt.Sprintf("docker-machine-sakuracloud/%s", version.Version),
 		AcceptLanguage:         sacloud.APIDefaultAcceptLanguage,
-		DefaultTimeoutDuration: sacloud.APIDefaultTimeoutDuration,
 		RetryMax:               sacloud.APIDefaultRetryMax,
-		RetryInterval:          sacloud.APIDefaultRetryInterval,
 		HTTPClient:             http.DefaultClient,
 	}
 }
 
 // ServerBuilderClient returns a api client for ServerBuilder
-func (c *APIClient) ServerBuilderClient() *server.BuildersAPIClient {
+func (c *APIClient) ServerBuilderClient() *server.APIClient {
 	return server.NewBuildersAPIClient(c.caller)
 }
 
@@ -91,7 +90,7 @@ func (c *APIClient) ValidateClientConfig() error {
 
 // IsValidPlan validates plan
 func (c *APIClient) IsValidPlan(core int, memory int) (bool, error) {
-	plan, err := server.FindPlan(context.Background(), sacloud.NewServerPlanOp(c.caller), c.Zone, &server.FindPlanRequest{
+	plan, err := query.FindServerPlan(context.Background(), sacloud.NewServerPlanOp(c.caller), c.Zone, &query.FindServerPlanRequest{
 		CPU:      core,
 		MemoryGB: memory,
 	})

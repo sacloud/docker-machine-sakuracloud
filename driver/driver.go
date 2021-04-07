@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"strconv"
@@ -18,9 +17,10 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/sacloud/docker-machine-sakuracloud/sakuracloud"
+	"github.com/sacloud/libsacloud/v2/helper/builder/server"
+	diskBuilder "github.com/sacloud/libsacloud/v2/helper/builder/disk"
+	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/libsacloud/v2/utils/server"
-	"github.com/sacloud/libsacloud/v2/utils/server/ostype"
 )
 
 // Driver sakuracloud driver
@@ -210,7 +210,7 @@ func (d *Driver) Create() error {
 	// build server
 	ctx := context.Background()
 	sb := d.buildSakuraServerSpec(publicKey)
-	buildResult, err := sb.Build(ctx, d.Client.ServerBuilderClient(), d.Client.Zone)
+	buildResult, err := sb.Build(ctx, d.Client.Zone)
 	if err != nil {
 		return fmt.Errorf("error creating host: %v", err)
 	}
@@ -256,7 +256,7 @@ func (d *Driver) prepareSSHKey() (string, error) {
 		return "", fmt.Errorf("unable to copy ssh key: %s", err)
 	}
 
-	pKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	pKey, err := os.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
 		return "", err
 	}
@@ -327,7 +327,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 		interfaceDriver = types.InterfaceDrivers.E1000
 	}
 
-	var ost ostype.UnixPublicArchiveType
+	var ost ostype.ArchiveOSType
 	switch d.serverConfig.OSType {
 	case "rancheros":
 		ost = ostype.RancherOS
@@ -363,7 +363,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 		notes = append(notes, fmt.Sprintf(sakuraInstallNetToolsScriptBody, d.EnginePort))
 	}
 
-	diskBuilder := &server.FromUnixDiskBuilder{
+	db := &diskBuilder.FromUnixBuilder{
 		OSType: ost,
 		Name:   d.serverConfig.HostName,
 		SizeGB: d.serverConfig.DiskSize,
@@ -373,7 +373,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 		// Description:   "",
 		// Tags:          nil,
 		// IconID:        0,
-		EditParameter: &server.UnixDiskEditRequest{
+		EditParameter: &diskBuilder.UnixEditRequest {
 			HostName:            d.serverConfig.HostName,
 			Password:            d.serverConfig.Password,
 			DisablePWAuth:       !d.serverConfig.EnablePWAuth,
@@ -385,7 +385,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 			SSHKeys:            []string{publicKey},
 			IsSSHKeysEphemeral: false,
 			IsNotesEphemeral:   true,
-			Notes:              notes,
+			NoteContents: notes,
 		},
 	}
 
@@ -406,7 +406,8 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 			PacketFilterID: types.StringID(d.serverConfig.PacketFilter),
 		},
 		//AdditionalNICs: nil,
-		DiskBuilders: []server.DiskBuilder{diskBuilder},
+		DiskBuilders: []diskBuilder.Builder{db},
+		Client: d.Client.ServerBuilderClient(),
 	}
 
 	log.Debugf("Build host spec %#v", builder)
@@ -418,7 +419,7 @@ func (d *Driver) createSSHKey() (string, error) {
 		return "", err
 	}
 
-	publicKey, err := ioutil.ReadFile(d.publicSSHKeyPath())
+	publicKey, err := os.ReadFile(d.publicSSHKeyPath())
 	if err != nil {
 		return "", err
 	}
