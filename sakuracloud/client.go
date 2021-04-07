@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/sacloud/libsacloud/v2/helper/query"
-
 	"github.com/sacloud/docker-machine-sakuracloud/version"
+	"github.com/sacloud/libsacloud/v2/helper/builder/disk"
 	"github.com/sacloud/libsacloud/v2/helper/builder/server"
+	"github.com/sacloud/libsacloud/v2/helper/query"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
@@ -58,6 +58,11 @@ func initCaller(token, secret string) sacloud.APICaller {
 // ServerBuilderClient returns a api client for ServerBuilder
 func (c *APIClient) ServerBuilderClient() *server.APIClient {
 	return server.NewBuildersAPIClient(c.caller)
+}
+
+// DiskBuilderClient returns a api client for DiskBuilder
+func (c *APIClient) DiskBuilderClient() *disk.APIClient {
+	return disk.NewBuildersAPIClient(c.caller)
 }
 
 // Init initialize APIClient
