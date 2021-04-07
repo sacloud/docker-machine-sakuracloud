@@ -173,7 +173,7 @@ var mcnFlags = []mcnflag.Flag{
 		EnvVar: "SAKURACLOUD_DISK_PLAN",
 		Name:   "sakuracloud-disk-plan",
 		Usage:  "sakuracloud disk plan[hdd/ssd]",
-		Value:  string(defaultDiskPlan),
+		Value:  defaultDiskPlan,
 	},
 	mcnflag.IntFlag{
 		EnvVar: "SAKURACLOUD_DISK_SIZE",
@@ -191,7 +191,7 @@ var mcnFlags = []mcnflag.Flag{
 		EnvVar: "SAKURACLOUD_INTERFACE_DRIVER",
 		Name:   "sakuracloud-interface-driver",
 		Usage:  fmt.Sprintf("sakuracloud interface(NIC) driver[%s]", strings.Join(allowInterfaceDrivers, "/")),
-		Value:  string(defaultInterfaceDriver),
+		Value:  defaultInterfaceDriver,
 	},
 	mcnflag.StringFlag{
 		EnvVar: "SAKURACLOUD_PASSWORD",

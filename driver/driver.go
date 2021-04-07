@@ -17,8 +17,8 @@ import (
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/sacloud/docker-machine-sakuracloud/sakuracloud"
-	"github.com/sacloud/libsacloud/v2/helper/builder/server"
 	diskBuilder "github.com/sacloud/libsacloud/v2/helper/builder/disk"
+	"github.com/sacloud/libsacloud/v2/helper/builder/server"
 	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
@@ -53,7 +53,6 @@ func NewDriver(hostName, storePath string) drivers.Driver {
 }
 
 func validateSakuraServerConfig(c *sakuracloud.APIClient, config *sakuraServerConfig) error {
-
 	err := config.Validate()
 	if err != nil {
 		return fmt.Errorf("invalid parameter: %s", err)
@@ -200,7 +199,6 @@ func (d *Driver) PreCreateCheck() error {
 
 // Create create server on sakuracloud
 func (d *Driver) Create() error {
-
 	publicKey, err := d.prepareSSHKey()
 	if err != nil {
 		return err
@@ -228,7 +226,9 @@ func (d *Driver) Create() error {
 	if d.serverConfig.IsNeedWaitingRestart() {
 		// wait for shutdown
 		d.waitForServerByState(state.Stopped)
-		d.Start()
+		if err := d.Start(); err != nil {
+			return err
+		}
 		d.waitForServerByState(state.Running)
 	}
 
@@ -274,7 +274,9 @@ func (d *Driver) preparePassword() {
 
 func generateRandomPassword() string {
 	var n uint64
-	binary.Read(rand.Reader, binary.LittleEndian, &n)
+	if err := binary.Read(rand.Reader, binary.LittleEndian, &n); err != nil {
+		return ""
+	}
 	return strconv.FormatUint(n, 36)
 }
 
@@ -318,7 +320,6 @@ sh -c 'sleep 10; shutdown -h now' &
 exit 0`
 
 func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
-
 	var interfaceDriver types.EInterfaceDriver
 	switch d.serverConfig.InterfaceDriver {
 	case "virtio":
@@ -373,7 +374,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 		// Description:   "",
 		// Tags:          nil,
 		// IconID:        0,
-		EditParameter: &diskBuilder.UnixEditRequest {
+		EditParameter: &diskBuilder.UnixEditRequest{
 			HostName:            d.serverConfig.HostName,
 			Password:            d.serverConfig.Password,
 			DisablePWAuth:       !d.serverConfig.EnablePWAuth,
@@ -385,7 +386,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 			SSHKeys:            []string{publicKey},
 			IsSSHKeysEphemeral: false,
 			IsNotesEphemeral:   true,
-			NoteContents: notes,
+			NoteContents:       notes,
 		},
 	}
 
@@ -407,7 +408,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 		},
 		//AdditionalNICs: nil,
 		DiskBuilders: []diskBuilder.Builder{db},
-		Client: d.Client.ServerBuilderClient(),
+		Client:       d.Client.ServerBuilderClient(),
 	}
 
 	log.Debugf("Build host spec %#v", builder)
@@ -460,13 +461,17 @@ func (d *Driver) Remove() error {
 // Restart restart server(call PowerOFf and PowerOn)
 func (d *Driver) Restart() error {
 	// PowerOff
-	d.getClient().PowerOff(d.ID)
+	if err := d.getClient().PowerOff(d.ID); err != nil {
+		return err
+	}
 
 	// wait
 	d.waitForServerByState(state.Stopped)
 
 	//poweron
-	d.getClient().PowerOn(d.ID)
+	if err := d.getClient().PowerOn(d.ID); err != nil {
+		return err
+	}
 
 	//wait
 	d.waitForServerByState(state.Running)

@@ -1,0 +1,60 @@
+# Visit https://goreleaser.com for documentation on how to customize this
+# behavior.
+
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - main: ./cmd/docker-machine-driver-sakuracloud.go
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X github.com/sacloud/usacloud/pkg/version.Revision={{.ShortCommit}}
+    goos:
+      - windows
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - '386'
+      - arm
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: '386'
+      - goos: darwin
+        goarch: arm
+    binary: 'docker-machine-driver-sakuracloud'
+archives:
+  - format: zip
+    name_template: 'docker-machine-driver-sakuracloud_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+checksum:
+  name_template: 'docker-machine-driver-sakuracloud_{{ .Version }}_SHA256SUMS'
+  algorithm: sha256
+signs:
+  - artifacts: checksum
+    args:
+      - "--local-user"
+      - "E37EC0B895A9AC27DC4919AB96CEB4B93D86849D"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+brews:
+  - tap:
+      owner: sacloud
+      name: homebrew-docker-machine-sakuracloud
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    url_template: "https://github.com/sacloud/docker-machine-sakuracloud/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    commit_author:
+      name: Sacloud
+      email: sacloud.users@gmail.com
+    homepage: "https://github.com/sacloud/docker-machine-sakuracloud"
+    license: "Apache 2.0"
+    # for debug
+    # skip_upload: true
+    test: |
+      system "#{bin}/docker-machine-driver-sakuracloud --version"
+changelog:
+  skip: true
