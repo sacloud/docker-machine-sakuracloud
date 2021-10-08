@@ -35,6 +35,7 @@ type sakuraServerConfig struct {
 	OSType          string
 	Core            int
 	Memory          int
+	GPU             int
 	DiskPlan        string
 	DiskSize        int
 	DiskConnection  string
@@ -168,6 +169,11 @@ var mcnFlags = []mcnflag.Flag{
 		Name:   "sakuracloud-memory",
 		Usage:  "sakuracloud memory size(GB)",
 		Value:  defaultMemorySize,
+	},
+	mcnflag.IntFlag{
+		EnvVar: "SAKURACLOUD_GPU",
+		Name:   "sakuracloud-gpu",
+		Usage:  "sakuracloud number of GPUs",
 	},
 	mcnflag.StringFlag{
 		EnvVar: "SAKURACLOUD_DISK_PLAN",
