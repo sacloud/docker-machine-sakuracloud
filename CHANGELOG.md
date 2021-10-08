@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.0 (2021-10-08)
+
+- Added --sakuracloud-gpu parameter #81 (yamamoto-febc)
+
 ## 1.5.0 (2021-04-07)
 
 - Update development environments #78 (yamamoto-febc)
