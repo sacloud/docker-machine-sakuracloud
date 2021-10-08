@@ -58,9 +58,9 @@ func validateSakuraServerConfig(c *sakuracloud.APIClient, config *sakuraServerCo
 		return fmt.Errorf("invalid parameter: %s", err)
 	}
 
-	res, err := c.IsValidPlan(config.Core, config.Memory)
+	res, err := c.IsValidPlan(config.Core, config.Memory, config.GPU)
 	if !res || err != nil {
-		return fmt.Errorf("invalid parameter: core or memory is invalid : %v", err)
+		return fmt.Errorf("invalid parameter: invalid plan: core/memory/gpu : %v", err)
 	}
 
 	if config.PacketFilter != "" {
@@ -103,6 +103,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		OSType:          flags.String("sakuracloud-os-type"),
 		Core:            flags.Int("sakuracloud-core"),
 		Memory:          flags.Int("sakuracloud-memory"),
+		GPU:            flags.Int("sakuracloud-gpu"),
 		DiskPlan:        flags.String("sakuracloud-disk-plan"),
 		DiskSize:        flags.Int("sakuracloud-disk-size"),
 		DiskConnection:  flags.String("sakuracloud-disk-connection"),
@@ -395,6 +396,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 		Name:            d.serverConfig.HostName,
 		CPU:             d.serverConfig.Core,
 		MemoryGB:        d.serverConfig.Memory,
+		GPU: d.serverConfig.GPU,
 		Commitment:      types.Commitments.Standard, // TODO パラメータ化
 		Generation:      types.PlanGenerations.Default,
 		InterfaceDriver: interfaceDriver,
