@@ -35,7 +35,7 @@ type sakuraServerConfig struct {
 	OSType          string
 	Core            int
 	Memory          int
-	GPU int
+	GPU             int
 	DiskPlan        string
 	DiskSize        int
 	DiskConnection  string

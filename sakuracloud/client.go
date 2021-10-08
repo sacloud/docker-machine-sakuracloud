@@ -95,11 +95,11 @@ func (c *APIClient) ValidateClientConfig() error {
 }
 
 // IsValidPlan validates plan
-func (c *APIClient) IsValidPlan(core ,memory, gpu int) (bool, error) {
+func (c *APIClient) IsValidPlan(core, memory, gpu int) (bool, error) {
 	plan, err := query.FindServerPlan(context.Background(), sacloud.NewServerPlanOp(c.caller), c.Zone, &query.FindServerPlanRequest{
 		CPU:      core,
 		MemoryGB: memory,
-		GPU: gpu,
+		GPU:      gpu,
 	})
 	if err != nil {
 		return false, err

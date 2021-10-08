@@ -103,7 +103,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		OSType:          flags.String("sakuracloud-os-type"),
 		Core:            flags.Int("sakuracloud-core"),
 		Memory:          flags.Int("sakuracloud-memory"),
-		GPU:            flags.Int("sakuracloud-gpu"),
+		GPU:             flags.Int("sakuracloud-gpu"),
 		DiskPlan:        flags.String("sakuracloud-disk-plan"),
 		DiskSize:        flags.Int("sakuracloud-disk-size"),
 		DiskConnection:  flags.String("sakuracloud-disk-connection"),
@@ -396,7 +396,7 @@ func (d *Driver) buildSakuraServerSpec(publicKey string) *server.Builder {
 		Name:            d.serverConfig.HostName,
 		CPU:             d.serverConfig.Core,
 		MemoryGB:        d.serverConfig.Memory,
-		GPU: d.serverConfig.GPU,
+		GPU:             d.serverConfig.GPU,
 		Commitment:      types.Commitments.Standard, // TODO パラメータ化
 		Generation:      types.PlanGenerations.Default,
 		InterfaceDriver: interfaceDriver,
